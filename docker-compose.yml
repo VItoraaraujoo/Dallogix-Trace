@@ -61,6 +61,7 @@ services:
       retries: 20
 
   node-red:
+    profiles: ["industrial"]
     image: nodered/node-red:3.1.9
     restart: unless-stopped
     ports:
@@ -80,6 +81,7 @@ services:
       retries: 10
 
   modbus-virtual:
+    profiles: ["simulation"]
     build:
       context: ./integracoes/modbus-virtual
     ports:
