@@ -106,8 +106,9 @@ WHERE
   );
 
 INSERT INTO
-  codigos_produtos (product_id, barcode)
+  codigos_produtos (company_id, product_id, barcode)
 SELECT
+  p.company_id,
   p.id,
   '7898250782592'
 FROM
@@ -120,7 +121,8 @@ WHERE
     FROM
       codigos_produtos pc
     WHERE
-      pc.barcode = '7898250782592'
+      pc.company_id = p.company_id
+      AND pc.barcode = '7898250782592'
   );
 
 INSERT INTO

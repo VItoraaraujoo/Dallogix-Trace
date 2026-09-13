@@ -1,3 +1,11 @@
+@font-face {
+  font-family: "Inter";
+  src: url("../fonts/Inter-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --ink: #17212b;
   --muted: #6b7785;
@@ -8,7 +16,7 @@
   --green: #22824e;
   --red: #b83232;
   --yellow: #cf8a00;
-  font-family: Inter, system-ui, sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   color: var(--ink);
   background: var(--bg);
 }
@@ -17,6 +25,11 @@
 }
 body {
   margin: 0;
+}
+@media (min-width: 1024px) {
+  html {
+    zoom: 0.9;
+  }
 }
 .shell {
   min-height: 100vh;

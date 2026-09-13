@@ -55,10 +55,16 @@ try {
         (int) $current["equipment_id"],
     );
 
-    $update = $pdo->prepare(
-        "UPDATE carregamentos SET state = 'PREPARANDO' WHERE id = :id AND company_id = :company_id",
+    $insert = $pdo->prepare(
+        "INSERT INTO solicitacoes_comandos_clp (company_id, equipment_id, carregamento_id, command, requested_by) VALUES (:company_id, :equipment_id, :carregamento_id, 'DESBLOQUEAR_MAQUINA', :requested_by)",
     );
-    $update->execute(["id" => $loadingId, "company_id" => $user["company_id"]]);
+    $insert->execute([
+        "company_id" => $user["company_id"],
+        "equipment_id" => $current["equipment_id"],
+        "carregamento_id" => $loadingId,
+        "requested_by" => $user["id"],
+    ]);
+    $requestId = (int) $pdo->lastInsertId();
     record_operational_event(
         $pdo,
         $user,
@@ -67,7 +73,8 @@ try {
         (int) $loadingId,
         [
             "previous_state" => "EMERGENCIA",
-            "state" => "PREPARANDO",
+            "state" => "EMERGENCIA",
+            "command_request_id" => $requestId,
             "command" => "DESBLOQUEAR_MAQUINA",
         ],
     );
@@ -76,8 +83,10 @@ try {
         "data" => [
             "id" => (int) $loadingId,
             "previous_state" => "EMERGENCIA",
-            "state" => "PREPARANDO",
+            "state" => "EMERGENCIA",
             "command" => "DESBLOQUEAR_MAQUINA",
+            "command_request_id" => $requestId,
+            "message" => "Solicitação registrada; a máquina só será liberada após confirmação do gateway industrial.",
         ],
     ]);
 } catch (ExcecaoDisponibilidadeClp $exception) {

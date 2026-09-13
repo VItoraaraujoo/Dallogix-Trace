@@ -2,10 +2,11 @@
 set -euo pipefail
 
 root_dir="$(cd "$(dirname "$0")/.." && pwd)"
-if [[ -f "$root_dir/.env" ]]; then
+env_file="${1:-$root_dir/.env}"
+if [[ -f "$env_file" ]]; then
   set -a
   # shellcheck disable=SC1091
-  . "$root_dir/.env"
+  . "$env_file"
   set +a
 fi
 
@@ -19,7 +20,7 @@ for key in "${required[@]}"; do
   fi
 done
 
-if [[ ! -f .env ]]; then
+if [[ ! -f "$env_file" ]]; then
   echo "ERRO: arquivo .env ausente para produção." >&2
   failures=$((failures + 1))
 fi

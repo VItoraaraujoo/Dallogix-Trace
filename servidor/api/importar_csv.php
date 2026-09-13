@@ -14,11 +14,15 @@ if ($user["company_id"] === null) {
 if (!in_array($user["role"], ["ADMIN_EMPRESA", "SUPERVISOR"], true)) {
     json_response(["error" => "Perfil sem permissão para importar romaneio."], 403);
 }
-if (!isset($_FILES["file"]) || $_FILES["file"]["error"] !== UPLOAD_ERR_OK) {
+if (!isset($_FILES["file"]) || $_FILES["file"]["error"] !== UPLOAD_ERR_OK || !is_uploaded_file($_FILES["file"]["tmp_name"])) {
     json_response(["error" => "Envie um arquivo CSV válido."], 422);
 }
-if ((int) ($_FILES["file"]["size"] ?? 0) > 5 * 1024 * 1024) {
+if ((int) ($_FILES["file"]["size"] ?? 0) < 1 || (int) ($_FILES["file"]["size"] ?? 0) > 5 * 1024 * 1024) {
     json_response(["error" => "CSV excede o limite de 5 MB."], 413);
+}
+$mime = (new finfo(FILEINFO_MIME_TYPE))->file($_FILES["file"]["tmp_name"]);
+if (!in_array($mime, ["text/csv", "text/plain", "application/csv", "application/vnd.ms-excel", "application/octet-stream"], true)) {
+    json_response(["error" => "Tipo de arquivo inválido: envie um CSV."], 422);
 }
 
 $handle = fopen($_FILES["file"]["tmp_name"], "rb");

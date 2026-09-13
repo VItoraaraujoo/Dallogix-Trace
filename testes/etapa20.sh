@@ -29,10 +29,16 @@ if ! printf '%s' "$unlock" | grep -q '"command":"DESBLOQUEAR_MAQUINA"'; then
   echo "FAIL: desbloqueio não foi aceito: $unlock"
   exit 1
 fi
-if ! printf '%s' "$unlock" | grep -q '"state":"PREPARANDO"'; then
-  echo "FAIL: máquina não voltou para PREPARANDO: $unlock"
+if ! printf '%s' "$unlock" | grep -q '"state":"EMERGENCIA"'; then
+  echo "FAIL: desbloqueio alterou o estado antes da confirmação do gateway: $unlock"
   exit 1
 fi
+request_id="$(printf '%s' "$unlock" | sed -n 's/.*"command_request_id":\([0-9][0-9]*\).*/\1/p')"
+[ -n "$request_id" ] || { echo "FAIL: solicitação de desbloqueio não foi criada"; exit 1; }
+claimed_unlock="$(curl -sS -H 'Content-Type: application/json' -H "X-Internal-Token: ${PLC_INTERNAL_TOKEN:-change-me-plc-token}" -d "{\"action\":\"CLAIM\",\"equipment_id\":$equipment_id}" "$base_url/api/plc_gateway.php")"
+printf '%s' "$claimed_unlock" | grep -q "\"id\":$request_id" || { echo "FAIL: gateway não reservou desbloqueio: $claimed_unlock"; exit 1; }
+completed_unlock="$(curl -sS -H 'Content-Type: application/json' -H "X-Internal-Token: ${PLC_INTERNAL_TOKEN:-change-me-plc-token}" -d "{\"action\":\"COMPLETE\",\"request_id\":$request_id,\"status\":\"APLICADO\",\"message\":\"Intertravamentos confirmados no teste\"}" "$base_url/api/plc_gateway.php")"
+printf '%s' "$completed_unlock" | grep -q '"status":"APLICADO"' || { echo "FAIL: gateway não confirmou desbloqueio: $completed_unlock"; exit 1; }
 
 # Processa as evidências da própria fixture no worker simulado e encerra a
 # operação, liberando a Dala para as etapas de preparação seguintes.

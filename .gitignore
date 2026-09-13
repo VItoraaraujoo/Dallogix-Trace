@@ -10,3 +10,5 @@ armazenamento/backups/
 armazenamento/updates/
 tmp/
 .codegraph/
+
+armazenamento/producao-teste/

@@ -745,7 +745,7 @@ textarea::placeholder {
 body {
   background: #eef3f6;
   color: var(--ink);
-  font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
 }
 .sidebar {
   background: #fff;
@@ -1221,7 +1221,7 @@ textarea {
   --shadow-lg: 0 12px 30px rgba(16, 43, 59, 0.09);
 }
 body {
-  font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   background: #edf2f5;
 }
 .sidebar {
@@ -2583,6 +2583,37 @@ textarea {
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   column-gap: 20px;
+}
+
+.dala-create-screen {
+  max-width: 820px;
+  margin: 6px auto 0;
+}
+.dala-create-panel {
+  padding: 30px 34px 34px;
+}
+.dala-create-panel .grid.one {
+  gap: 22px;
+}
+.dala-create-panel label {
+  color: #395268;
+  font-weight: 750;
+}
+.dala-create-panel input {
+  margin-top: 8px;
+  min-height: 48px;
+}
+.dala-create-panel small {
+  display: block;
+  margin-top: 7px;
+  color: #74889a;
+  font-weight: 500;
+  line-height: 1.45;
+}
+@media (max-width: 760px) {
+  .dala-create-panel {
+    padding: 20px;
+  }
 }
 .title-row.has-back > div:not(.actions) {
   min-width: 0;

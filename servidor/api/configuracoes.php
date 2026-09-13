@@ -14,7 +14,7 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
     $settings = $pdo->prepare(
         "SELECT gateway_public_ip, pdf_field_mapping, pdf_search_field, updated_at FROM configuracoes_empresa WHERE company_id = :company_id LIMIT 1",
     );
-    $settings->execute(["company_id" => $user["company_id"]]);
+    $settings->execute(["company_id" => $usuarioAtor["company_id"]]);
     $data = $settings->fetch() ?: [
         "gateway_public_ip" => null,
         "pdf_field_mapping" => null,
@@ -30,7 +30,7 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
     $equipment = $pdo->prepare(
         "SELECT id, equipment_code, name, plc_ip, plc_port, external_port, plc_protocol FROM equipamentos WHERE company_id = :company_id ORDER BY equipment_code",
     );
-    $equipment->execute(["company_id" => $user["company_id"]]);
+    $equipment->execute(["company_id" => $usuarioAtor["company_id"]]);
     json_response([
         "data" => ["settings" => $data, "dalas" => $equipment->fetchAll()],
     ]);
@@ -58,7 +58,7 @@ if (array_key_exists("sync_remote_url", $payload)) {
 $currentSync = $pdo->prepare(
     "SELECT sync_remote_url FROM configuracoes_empresa WHERE company_id = :company_id LIMIT 1",
 );
-$currentSync->execute(["company_id" => $user["company_id"]]);
+$currentSync->execute(["company_id" => $usuarioAtor["company_id"]]);
 $syncUrl = trim((string) ($currentSync->fetchColumn() ?: ""));
 $mapping = $payload["pdf_field_mapping"] ?? [];
 $pdfSearchField = in_array(
@@ -79,7 +79,7 @@ $upsert = $pdo->prepare(
     "INSERT INTO configuracoes_empresa (company_id, gateway_public_ip, sync_remote_url, pdf_field_mapping, pdf_search_field, updated_by) VALUES (:company_id, :gateway_public_ip, :sync_remote_url, :pdf_field_mapping, :pdf_search_field, :updated_by) ON DUPLICATE KEY UPDATE gateway_public_ip = VALUES(gateway_public_ip), sync_remote_url = VALUES(sync_remote_url), pdf_field_mapping = VALUES(pdf_field_mapping), pdf_search_field = VALUES(pdf_search_field), updated_by = VALUES(updated_by)",
 );
 $upsert->execute([
-    "company_id" => $user["company_id"],
+    "company_id" => $usuarioAtor["company_id"],
     "gateway_public_ip" => $gatewayIp !== "" ? $gatewayIp : null,
     "sync_remote_url" => $syncUrl !== "" ? $syncUrl : null,
     "pdf_field_mapping" => json_encode(
@@ -87,14 +87,14 @@ $upsert->execute([
         JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
     ),
     "pdf_search_field" => $pdfSearchField,
-    "updated_by" => $user["id"],
+    "updated_by" => $usuarioAtor["id"],
 ]);
 record_operational_event(
     $pdo,
-    $user,
+    $usuarioAtor,
     "CONFIGURACAO_ATUALIZADA",
     "configuracoes_empresa",
-    (int) $user["company_id"],
+    (int) $usuarioAtor["company_id"],
     [
         "gateway_public_ip" => $gatewayIp,
         "sync_remote_url_configurada" => $syncUrl !== "",

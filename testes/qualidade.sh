@@ -27,6 +27,11 @@ if grep -Rqs 'TraceRouter' interface/js; then
   exit 1
 fi
 
+if grep -Eq '\$user\[' servidor/api/configuracoes.php; then
+  echo 'FAIL: configuracoes.php usa $user sem inicialização; use $usuarioAtor.' >&2
+  exit 1
+fi
+
 python3 -m py_compile scripts/test_modbus_virtual.py integracoes/modbus-virtual/server.py
 bash -n scripts/check_production_env.sh
 bash -n scripts/check_physical_deployment.sh scripts/launch_kiosk.sh

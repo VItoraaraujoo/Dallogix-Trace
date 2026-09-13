@@ -1,0 +1,11 @@
+[Unit]
+Description=Verifica atualizações da master do Dallogix Trace
+
+[Timer]
+OnBootSec=2min
+OnUnitInactiveSec=1min
+Persistent=true
+Unit=dallogix-trace-sync.service
+
+[Install]
+WantedBy=timers.target

@@ -129,11 +129,15 @@ if (!in_array($user["role"], ["ADMIN_EMPRESA", "SUPERVISOR"], true)) {
 }
 
 $file = $_FILES["file"] ?? null;
-if (!$file || ($file["error"] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+if (!$file || ($file["error"] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK || !is_uploaded_file($file["tmp_name"] ?? "")) {
     json_response(["error" => "Selecione o arquivo PDF do romaneio."], 422);
 }
-if (($file["size"] ?? 0) > 10 * 1024 * 1024) {
+if (($file["size"] ?? 0) < 1 || ($file["size"] ?? 0) > 10 * 1024 * 1024) {
     json_response(["error" => "Arquivo maior que 10 MB."], 422);
+}
+$mime = (new finfo(FILEINFO_MIME_TYPE))->file($file["tmp_name"]);
+if ($mime !== "application/pdf") {
+    json_response(["error" => "Tipo de arquivo inválido: envie um PDF."], 422);
 }
 $originalName = (string) ($file["name"] ?? "");
 if (!str_ends_with(strtolower($originalName), ".pdf")) {

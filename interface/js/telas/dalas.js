@@ -17,17 +17,17 @@ export function dalas(store) {
   const canManage = ["ADMIN_DALLOGIX", "ADMIN_EMPRESA"].includes(
     store.state.userRole,
   );
-  const form = open
-    ? `<section class="panel"><h3>Nova dala</h3><form id="dala-create-form"><div class="grid three">
-<label>Nome<input name="name" required /></label>
-<label>Identificador<input name="equipment_code" required pattern="[a-z0-9_]{1,30}" title="Letras minúsculas, números e underscores (máx. 30)" /></label>
-<label>IP do CLP<input name="plc_ip" required /></label>
+  if (open) {
+    return `<div class="dala-create-screen"><div class="title-row has-back"><button class="button secondary page-back" data-action="toggle-dala-form" type="button">← Voltar</button><div><h2>Nova dalla</h2><p>Cadastre a comunicação da esteira com o CLP e o gateway.</p></div></div>
+<section class="panel dala-create-panel"><form id="dala-create-form"><div class="grid one">
+<label>Nome<input name="name" autocomplete="off" required /></label>
+<label>Identificador<input name="equipment_code" autocomplete="off" required pattern="[a-z0-9_]{1,30}" title="Letras minúsculas, números e underscores (máx. 30)" /><small>Use letras minúsculas, números e underscore. Máximo de 30 caracteres.</small></label>
+<label>IP do CLP<input name="plc_ip" inputmode="decimal" autocomplete="off" required /></label>
 <label>Porta do CLP<input name="plc_port" type="number" value="502" min="1" max="65535" required /></label>
-<label>Porta externa no gateway<input name="external_port" type="number" min="1" max="65535" /></label>
-</div><div class="actions">${button("Salvar", "submit-dala")}${button("Cancelar", "toggle-dala-form", "ghost")}</div></form></section><br>`
-    : "";
+<label>Porta externa no gateway<input name="external_port" type="number" min="1" max="65535" /><small>Porta TCP pública do gateway que encaminha a comunicação para esta dalla.</small></label>
+</div><div class="actions">${button("Cadastrar dalla", "submit-dala")}</div></form></section></div>`;
+  }
   return `<div class="title-row with-actions"><div><h2>Dalas</h2></div>${canManage ? button(open ? "Fechar formulário" : "Nova dala", "toggle-dala-form") : ""}</div>
-${form}
 <section class="panel reference-table-panel"><div class="table-wrap"><table><thead><tr><th>Nome</th><th>Identificador</th><th>IP do CLP</th><th>Porta do CLP</th><th>Porta Externa</th><th>Status</th><th>Ações</th></tr></thead><tbody>
 ${
   rows.length

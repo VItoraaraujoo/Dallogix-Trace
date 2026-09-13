@@ -10,6 +10,9 @@ if [[ "${APP_ENV:-local}" == "production" && "${TRACE_ALLOW_RESTORE:-0}" != "1" 
   exit 3
 fi
 
-docker compose exec -T mysql sh -lc \
+root_dir="$(cd "$(dirname "$0")/.." && pwd)"
+bash "$root_dir/scripts/verify_backup.sh" "$1"
+
+docker compose --project-directory "$root_dir" exec -T mysql sh -lc \
   'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"' < "$1"
 printf 'Backup restaurado: %s\n' "$1"

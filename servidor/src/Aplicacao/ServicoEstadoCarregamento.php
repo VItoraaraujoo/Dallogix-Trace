@@ -23,7 +23,7 @@ final class ServicoEstadoCarregamento
         "PREPARANDO" => ["CARREGANDO", "PAUSADO", "EMERGENCIA"],
         "CARREGANDO" => ["PAUSADO", "FINALIZANDO", "EMERGENCIA"],
         "PAUSADO" => ["CARREGANDO", "EMERGENCIA"],
-        "FINALIZANDO" => ["FINALIZADO", "EMERGENCIA"],
+        "FINALIZANDO" => ["EMERGENCIA"],
         "EMERGENCIA" => ["PREPARANDO"],
         "FINALIZADO" => [],
     ];
@@ -50,6 +50,12 @@ final class ServicoEstadoCarregamento
             throw new ExcecaoEstadoCarregamento(
                 "Carregamento e estado válido são obrigatórios.",
                 422,
+            );
+        }
+        if ($target === "FINALIZADO") {
+            throw new ExcecaoEstadoCarregamento(
+                "Use o encerramento do carregamento para validar capturas e divergências.",
+                409,
             );
         }
 
@@ -91,15 +97,21 @@ final class ServicoEstadoCarregamento
             );
         }
 
-        $finishedAt = $target === "FINALIZADO" ? ", finished_at = NOW()" : "";
         $update = $this->connection->prepare(
-            "UPDATE carregamentos SET state = :state{$finishedAt} WHERE id = :id AND company_id = :company_id",
+            "UPDATE carregamentos SET state = :state WHERE id = :id AND company_id = :company_id AND state = :previous_state",
         );
         $update->execute([
             "state" => $target,
             "id" => $loadingId,
             "company_id" => $user["company_id"],
+            "previous_state" => $current["state"],
         ]);
+        if ($update->rowCount() !== 1) {
+            throw new ExcecaoEstadoCarregamento(
+                "O estado do carregamento mudou. Atualize a operação antes de tentar novamente.",
+                409,
+            );
+        }
         \record_operational_event(
             $this->connection,
             $user,

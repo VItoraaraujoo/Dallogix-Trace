@@ -1,5 +1,3 @@
-import { apiUrl } from "../configuracao.js";
-
 export class ArmazenamentoTrace {
   constructor() {
     this.state = {

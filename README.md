@@ -29,6 +29,12 @@ A reversão e as ações configuráveis por Dala usam uma fila própria para o g
 
 Para validar o transporte do CLP virtual, execute `python3 scripts/test_modbus_virtual.py` com os containers ativos. O teste escreve e lê somente a memória do simulador em `127.0.0.1:1502`.
 
+## Testar com configuração de produção
+
+Execute `python3 scripts/production_test.py` para preparar um ambiente isolado em
+`https://localhost:8443`, com banco separado e credenciais novas. Veja os acessos,
+os testes e os limites em [teste de produção local](documentacao/operacao/teste-producao-local.md).
+
 ## Banco local
 
 Com os containers ativos, aplique as migrations e o seed:
@@ -40,7 +46,7 @@ done
 docker compose exec -T mysql mysql -u root -pchange-me-root trace_local < banco-de-dados/seeds/001_local_seed.sql
 ```
 
-Em uma instalação já existente, aplique somente as migrations ainda não executadas. A mais recente é `021_acoes_dala_e_logs_erros.sql`.
+Em uma instalação já existente, aplique somente as migrations ainda não executadas. A mais recente é `023_codigo_barras_por_empresa.sql`.
 
 O seed cria uma empresa, usuário administrador, máquina, esteira, produto e barcode para desenvolvimento local.
 

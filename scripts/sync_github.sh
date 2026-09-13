@@ -47,12 +47,9 @@ for migration in banco-de-dados/migrations/020_nomenclatura_portugues.sql banco-
   docker compose exec -T mysql sh -lc 'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"' < "$migration"
   touch "$marker"
 done
-# O Nginx resolve o nome do PHP ao iniciar. Recriar todos os serviços evita que
-# ele conserve o IP antigo quando o container PHP for reconstruído.
-docker compose up -d --build --force-recreate
-# Garante que o Nginx inicie depois que o PHP foi recriado, renovando a
-# resolução do upstream e evitando endereço antigo ou container apenas criado.
-docker compose up -d nginx
+# Reconstrói e recria somente os serviços afetados pela alteração. A VM, o
+# banco e os serviços que não mudaram permanecem em execução.
+docker compose up -d --build --remove-orphans
 healthy=0
 for _ in $(seq 1 "${HEALTHCHECK_ATTEMPTS:-90}"); do
   if curl --fail --silent --max-time 3 "http://127.0.0.1:${WEB_PORT:-80}/api/health.php" >/dev/null; then healthy=1; break; fi

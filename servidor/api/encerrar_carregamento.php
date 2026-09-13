@@ -69,20 +69,26 @@ if ($hasDivergence && $justification === "") {
 try {
     $pdo->beginTransaction();
     $update = $pdo->prepare(
-        "UPDATE carregamentos SET state = 'FINALIZADO', finished_at = NOW(), finish_justification = :justification WHERE id = :id AND company_id = :company_id",
+        "UPDATE carregamentos SET state = 'FINALIZADO', finished_at = NOW(), finish_justification = :justification WHERE id = :id AND company_id = :company_id AND state = :previous_state",
     );
     $update->execute([
         "id" => $loadingId,
         "company_id" => $user["company_id"],
         "justification" => $justification !== "" ? $justification : null,
+        "previous_state" => $loading["state"],
     ]);
+    if ($update->rowCount() !== 1) {
+        $pdo->rollBack();
+        json_response(["error" => "O estado do carregamento mudou. Atualize a operação antes de encerrar."], 409);
+    }
     // A divergência precisa virar ocorrência auditável: não é apenas um estado visual do romaneio.
     $divergences = $pdo->prepare("SELECT ri.product_id, ri.planned_quantity,
         COALESCE((SELECT COUNT(*) FROM leituras l WHERE l.carregamento_id = :loading_id AND l.product_id = ri.product_id AND l.result = 'VALIDO'), 0) AS moved_quantity,
         p.name FROM romaneio_itens ri JOIN produtos p ON p.id = ri.product_id
-        WHERE ri.romaneio_id = :romaneio_id AND (ri.truck_id = (SELECT truck_id FROM carregamentos WHERE id = :loading_id) OR ri.truck_id IS NULL)");
+        WHERE ri.romaneio_id = :romaneio_id AND (ri.truck_id = (SELECT truck_id FROM carregamentos WHERE id = :truck_loading_id) OR ri.truck_id IS NULL)");
     $divergences->execute([
         "loading_id" => $loadingId,
+        "truck_loading_id" => $loadingId,
         "romaneio_id" => $loading["romaneio_id"],
     ]);
     $registerDivergence = $pdo->prepare("INSERT INTO ocorrencias (company_id, carregamento_id, product_id, reference_key, type, quantity, description, created_by)

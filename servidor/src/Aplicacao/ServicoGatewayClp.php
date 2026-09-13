@@ -86,7 +86,7 @@ final class ServicoGatewayClp
         }
 
         $statement = $this->connection->prepare(
-            "SELECT id, command FROM solicitacoes_comandos_clp WHERE id = :id AND status = 'PROCESSANDO' AND (expires_at IS NULL OR expires_at >= NOW(3)) LIMIT 1",
+            "SELECT id, command, carregamento_id FROM solicitacoes_comandos_clp WHERE id = :id AND status = 'PROCESSANDO' AND (expires_at IS NULL OR expires_at >= NOW(3)) LIMIT 1",
         );
         $statement->execute(["id" => $requestId]);
         $request = $statement->fetch();
@@ -98,13 +98,25 @@ final class ServicoGatewayClp
         }
 
         $update = $this->connection->prepare(
-            "UPDATE solicitacoes_comandos_clp SET status = :status, completed_at = NOW(3), response_message = :message WHERE id = :id",
+            "UPDATE solicitacoes_comandos_clp SET status = :status, completed_at = NOW(3), response_message = :message WHERE id = :id AND status = 'PROCESSANDO' AND (expires_at IS NULL OR expires_at >= NOW(3))",
         );
         $update->execute([
             "status" => $status,
             "message" => $message === "" ? null : $message,
             "id" => $requestId,
         ]);
+        if ($update->rowCount() !== 1) {
+            throw new ExcecaoGatewayClp(
+                "Comando já concluído ou com prazo de confirmação expirado.",
+                409,
+            );
+        }
+        if ($status === "APLICADO" && $request["command"] === "DESBLOQUEAR_MAQUINA") {
+            $loading = $this->connection->prepare(
+                "UPDATE carregamentos SET state = 'PREPARANDO' WHERE id = :id AND state = 'EMERGENCIA'",
+            );
+            $loading->execute(["id" => $request["carregamento_id"]]);
+        }
         return [
             "request_id" => $requestId,
             "command" => $request["command"],

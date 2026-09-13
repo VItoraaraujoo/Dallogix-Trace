@@ -21,6 +21,9 @@ services:
     environment:
       APP_ENV: ${APP_ENV:-local}
       TZ: ${TZ:-America/Sao_Paulo}
+      SESSION_SECURE: ${SESSION_SECURE:-false}
+      SESSION_IDLE_TIMEOUT: ${SESSION_IDLE_TIMEOUT:-1800}
+      APP_URL: ${APP_URL:-http://localhost:8080}
       DB_HOST: mysql
       DB_NAME: ${MYSQL_DATABASE:-trace_local}
       DB_USER: ${MYSQL_USER:-trace}

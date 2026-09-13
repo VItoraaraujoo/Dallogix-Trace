@@ -16,6 +16,8 @@ header("Content-Type: application/json; charset=utf-8");
 header("X-Content-Type-Options: nosniff");
 header("X-Frame-Options: DENY");
 header("Referrer-Policy: no-referrer");
+header("Cross-Origin-Resource-Policy: same-origin");
+header("Cross-Origin-Opener-Policy: same-origin");
 
 // Converte avisos do PHP em exceções para que nenhuma resposta de API receba
 // HTML misturado ao JSON esperado pelo navegador.
@@ -45,6 +47,14 @@ session_set_cookie_params([
     "samesite" => "Strict",
 ]);
 session_start();
+
+$sessionIdleTimeout = max(300, (int) (getenv("SESSION_IDLE_TIMEOUT") ?: 1800));
+if (isset($_SESSION["last_activity"]) && time() - (int) $_SESSION["last_activity"] > $sessionIdleTimeout) {
+    $_SESSION = [];
+    session_destroy();
+    session_start();
+}
+$_SESSION["last_activity"] = time();
 
 function responder_json(array $dados, int $status = 200): never
 {
@@ -199,11 +209,6 @@ function gerar_token_csrf(): string
     return (string) $_SESSION["csrf_token"];
 }
 
-function csrf_token(): string
-{
-    return gerar_token_csrf();
-}
-
 function exigir_csrf(): void
 {
     if (ambiente_atual() !== "production") {
@@ -267,21 +272,11 @@ function verificar_taxa_de_login(string $identidade): void
     fclose($handle);
 }
 
-function enforce_login_rate_limit(string $identity): void
-{
-    verificar_taxa_de_login($identity);
-}
-
 function obter_usuario_sessao(): ?array
 {
     return isset($_SESSION["user"]) && is_array($_SESSION["user"])
         ? $_SESSION["user"]
         : null;
-}
-
-function session_user(): ?array
-{
-    return obter_usuario_sessao();
 }
 
 function exigir_sessao_usuario(): array
@@ -333,11 +328,6 @@ function usuario_publico(array $usuario): array
         "role" => $usuario["role"],
         "company_id" => $usuario["company_id"] === null ? null : (int) $usuario["company_id"],
     ];
-}
-
-function public_user(array $user): array
-{
-    return usuario_publico($user);
 }
 
 function registrar_evento_operacional(

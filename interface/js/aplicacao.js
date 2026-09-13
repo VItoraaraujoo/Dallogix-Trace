@@ -2,7 +2,7 @@ import { ArmazenamentoTrace } from "./classes/ArmazenamentoTrace.js";
 import { FORM_ACTIONS } from "./constantes/acoes.js";
 import { el, esc } from "./funcoes/html.js";
 import { settings } from "./telas/configuracoes.js";
-import { dalaActions, dalaEdit, dalas, dalaView } from "./telas/dalas.js";
+import { dalaActions, dalaEdit, dalas, dalaView } from "./telas/dalas.js?v=2";
 import { company } from "./telas/empresa.js";
 import { companies } from "./telas/empresas.js";
 import { errorLogs } from "./telas/logs.js";
@@ -377,36 +377,6 @@ function timedCommandConfirmation({
       .querySelector('[data-confirm="no"]')
       .addEventListener("click", () => finish(false));
   });
-}
-// Consulta o status Modbus de cada dala exibida e atualiza a célula/painel correspondente.
-async function checkDalaStatuses() {
-  const cells = document.querySelectorAll(".dala-status[data-equipment-id]");
-  await Promise.all(
-    [...cells].map(async (cell) => {
-      const id = cell.dataset.equipmentId;
-      try {
-        const status = await store.checkEquipmentStatus(id);
-        const tone = status.status === "ONLINE" ? "online" : "offline";
-        cell.innerHTML = `<span class="status-dot ${tone}"></span>${esc(status.message || status.status)}`;
-      } catch (error) {
-        cell.innerHTML = `<span class="status-dot offline"></span>${esc(error.message)}`;
-      }
-    }),
-  );
-  const viewStatus = document.querySelector(
-    "#dala-view-status[data-equipment-id]",
-  );
-  if (viewStatus) {
-    try {
-      const status = await store.checkEquipmentStatus(
-        viewStatus.dataset.equipmentId,
-      );
-      const tone = status.status === "ONLINE" ? "online" : "offline";
-      viewStatus.innerHTML = `<span class="status-dot ${tone}"></span>${esc(status.message || status.status)}`;
-    } catch (error) {
-      /* mantém mensagem de verificação */
-    }
-  }
 }
 function bindActions() {
   document.querySelectorAll("[data-action]").forEach((node) => {
@@ -1636,20 +1606,6 @@ async function bootstrap() {
   if (currentPage === "login") {
     if (window.location.search)
       window.history.replaceState(null, "", window.location.pathname);
-    let response;
-    try {
-      response = await fetch("/api/me.php");
-    } catch (error) {
-      response = null;
-    }
-    if (response?.ok) {
-      const result = await response.json();
-      authenticatedUser = result.user;
-      store.setUser(authenticatedUser);
-      store.setCsrfToken(result.csrf_token);
-      window.location.replace(pagePath(defaultPage()));
-      return;
-    }
     let loginMessage = "";
     try {
       loginMessage = sessionStorage.getItem("trace-login-message") || "";

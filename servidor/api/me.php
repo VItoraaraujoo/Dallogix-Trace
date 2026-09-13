@@ -6,10 +6,7 @@ require_once __DIR__ . "/../configuracao/bootstrap.php";
 
 exigir_metodo_http(["GET"]);
 
-$usuario = obter_usuario_sessao();
-if ($usuario === null) {
-    responder_json(["authenticated" => false], 401);
-}
+$usuario = require_session_user();
 
 responder_json([
     "authenticated" => true,

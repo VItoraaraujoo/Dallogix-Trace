@@ -49,32 +49,31 @@ final class ServicoComandoClp
             );
         }
 
-        $loading = $this->findLoading($loadingId, (int) $user["company_id"]);
-        if (!$loading) {
-            throw new ExcecaoComandoClp(
-                "Carregamento não encontrado para esta empresa.",
-                404,
-            );
-        }
-        if ($loading["state"] !== "PAUSADO") {
-            throw new ExcecaoComandoClp(
-                "Para alterar a reversão, pare a máquina primeiro.",
-                409,
-            );
-        }
-        $this->disponibilidadeClp->validarComando(
-            (int) $user["company_id"],
-            (int) $loading["equipment_id"],
-        );
-        if ($this->hasPendingCommand($loadingId)) {
-            throw new ExcecaoComandoClp(
-                "Já existe um comando de reversão aguardando o gateway industrial.",
-                409,
-            );
-        }
-
         $this->connection->beginTransaction();
         try {
+            $loading = $this->findLoading($loadingId, (int) $user["company_id"]);
+            if (!$loading) {
+                throw new ExcecaoComandoClp(
+                    "Carregamento não encontrado para esta empresa.",
+                    404,
+                );
+            }
+            if ($loading["state"] !== "PAUSADO") {
+                throw new ExcecaoComandoClp(
+                    "Para alterar a reversão, pare a máquina primeiro.",
+                    409,
+                );
+            }
+            $this->disponibilidadeClp->validarComando(
+                (int) $user["company_id"],
+                (int) $loading["equipment_id"],
+            );
+            if ($this->hasPendingCommand($loadingId)) {
+                throw new ExcecaoComandoClp(
+                    "Já existe um comando de reversão aguardando o gateway industrial.",
+                    409,
+                );
+            }
             $insert = $this->connection
                 ->prepare("INSERT INTO solicitacoes_comandos_clp
                 (company_id, equipment_id, carregamento_id, command, requested_by)
@@ -105,6 +104,9 @@ final class ServicoComandoClp
             if ($this->connection->inTransaction()) {
                 $this->connection->rollBack();
             }
+            if ($exception instanceof ExcecaoComandoClp || $exception instanceof ExcecaoDisponibilidadeClp) {
+                throw $exception;
+            }
             error_log(
                 "PLC command request could not be created: " .
                     $exception->getMessage(),
@@ -132,7 +134,7 @@ final class ServicoComandoClp
     private function findLoading(int $loadingId, int $companyId): array|false
     {
         $statement = $this->connection->prepare(
-            "SELECT id, state, equipment_id FROM carregamentos WHERE id = :id AND company_id = :company_id LIMIT 1",
+            "SELECT id, state, equipment_id FROM carregamentos WHERE id = :id AND company_id = :company_id LIMIT 1 FOR UPDATE",
         );
         $statement->execute(["id" => $loadingId, "company_id" => $companyId]);
         return $statement->fetch();
@@ -143,7 +145,7 @@ final class ServicoComandoClp
         $statement = $this->connection
             ->prepare("SELECT id FROM solicitacoes_comandos_clp
             WHERE carregamento_id = :carregamento_id
-              AND status IN ('PENDENTE', 'PROCESSANDO') LIMIT 1");
+              AND status IN ('PENDENTE', 'PROCESSANDO') LIMIT 1 FOR UPDATE");
         $statement->execute(["carregamento_id" => $loadingId]);
         return (bool) $statement->fetch();
     }

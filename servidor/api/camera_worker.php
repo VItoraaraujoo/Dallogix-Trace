@@ -53,35 +53,46 @@ if (
     );
 }
 
-$request = $pdo->prepare(
-    'SELECT id, carregamento_id, equipment_id, reason FROM solicitacoes_captura_camera WHERE id = :id AND status = \'CAPTURANDO\' LIMIT 1',
-);
-$request->execute(["id" => $requestId]);
-$capture = $request->fetch();
-if (!$capture) {
-    json_response(
-        ["error" => "Pedido de captura não está em processamento."],
-        404,
+$pdo->beginTransaction();
+try {
+    $request = $pdo->prepare(
+        'SELECT id, carregamento_id, equipment_id, reason FROM solicitacoes_captura_camera WHERE id = :id AND status = \'CAPTURANDO\' LIMIT 1 FOR UPDATE',
     );
+    $request->execute(["id" => $requestId]);
+    $capture = $request->fetch();
+    if (!$capture) {
+        $pdo->rollBack();
+        json_response(["error" => "Pedido de captura não está em processamento."], 404);
+    }
+    $update = $pdo->prepare(
+        "UPDATE solicitacoes_captura_camera SET status = 'CAPTURADA', captured_at = NOW(3), image_path = :image_path, error_message = NULL WHERE id = :id AND status = 'CAPTURANDO'",
+    );
+    $update->execute(["image_path" => $imagePath, "id" => $requestId]);
+    if ($update->rowCount() !== 1) {
+        throw new RuntimeException("Pedido de captura já foi concluído.");
+    }
+    $image = $pdo->prepare(
+        "INSERT INTO imagens (carregamento_id, equipment_id, path, reason, captured_at) VALUES (:carregamento_id, :equipment_id, :path, :reason, NOW())",
+    );
+    $image->execute([
+        "carregamento_id" => $capture["carregamento_id"],
+        "equipment_id" => $capture["equipment_id"],
+        "path" => $imagePath,
+        "reason" => $capture["reason"],
+    ]);
+    $imageId = (int) $pdo->lastInsertId();
+    $pdo->commit();
+} catch (Throwable $exception) {
+    if ($pdo->inTransaction()) $pdo->rollBack();
+    if ($exception instanceof RuntimeException && $exception->getMessage() === "Pedido de captura já foi concluído.") {
+        json_response(["error" => $exception->getMessage()], 409);
+    }
+    throw $exception;
 }
-
-$update = $pdo->prepare(
-    "UPDATE solicitacoes_captura_camera SET status = 'CAPTURADA', captured_at = NOW(3), image_path = :image_path, error_message = NULL WHERE id = :id",
-);
-$update->execute(["image_path" => $imagePath, "id" => $requestId]);
-$image = $pdo->prepare(
-    "INSERT INTO imagens (carregamento_id, equipment_id, path, reason, captured_at) VALUES (:carregamento_id, :equipment_id, :path, :reason, NOW())",
-);
-$image->execute([
-    "carregamento_id" => $capture["carregamento_id"],
-    "equipment_id" => $capture["equipment_id"],
-    "path" => $imagePath,
-    "reason" => $capture["reason"],
-]);
 json_response([
     "data" => [
         "request_id" => (int) $requestId,
-        "image_id" => (int) $pdo->lastInsertId(),
+        "image_id" => $imageId,
         "status" => "CAPTURADA",
     ],
 ]);

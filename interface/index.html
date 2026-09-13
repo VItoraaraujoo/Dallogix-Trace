@@ -3,10 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1" />
+    <link rel="icon" type="image/png" href="assets/branding/trace-platform.png" />
+    <link rel="apple-touch-icon" href="assets/branding/trace-platform.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#10243f" />
+    <meta property="og:site_name" content="Dallogix Trace" />
+    <meta property="og:title" content="Dallogix Trace" />
+    <meta property="og:image" content="/assets/branding/trace-platform.png" />
     <title>Acesso ao sistema • Dallogix Trace</title>
-    <link rel="stylesheet" href="css/styles.css" />
-    <link rel="stylesheet" href="css/light-theme.css?v=24" />
-    <link rel="stylesheet" href="css/auth.css" />
+    <link rel="stylesheet" href="css/styles.css?v=26" />
+    <link rel="stylesheet" href="css/light-theme.css?v=26" />
+    <link rel="stylesheet" href="css/auth.css?v=4" />
   </head>
   <body>
     <main class="login-page">
@@ -19,7 +27,7 @@
           Acesse a operação local e acompanhe os carregamentos em tempo real.
         </p>
         <div id="login-error"></div>
-        <form id="login-form" method="get" action="index.html">
+        <form id="login-form" method="post" action="index.html">
           <label
             >E-mail<input
               name="email"
@@ -41,6 +49,6 @@
         </form>
       </section>
     </main>
-    <script type="module" src="js/aplicacao.js?v=28" data-page="login"></script>
+    <script data-cfasync="false" type="module" src="js/aplicacao.js?v=30" data-page="login"></script>
   </body>
 </html>

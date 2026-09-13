@@ -1,0 +1,54 @@
+# Ambiente de homologação isolado. Não conecta gateways nem equipamentos físicos.
+name: dallogix-production-test
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:?}
+      MYSQL_USER: ${MYSQL_USER:?}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?}
+    volumes:
+      - production_test_mysql:/var/lib/mysql
+    healthcheck:
+      test: [CMD-SHELL, 'MYSQL_PWD="$${MYSQL_PASSWORD}" mysql -u"$${MYSQL_USER}" "$${MYSQL_DATABASE}" -e "SELECT 1" >/dev/null']
+      interval: 3s
+      timeout: 5s
+      retries: 40
+  php:
+    build: ./docker/php
+    restart: unless-stopped
+    environment:
+      APP_ENV: production
+      SESSION_SECURE: 'true'
+      SESSION_IDLE_TIMEOUT: ${SESSION_IDLE_TIMEOUT:-1800}
+      APP_URL: ${APP_URL:?}
+      TZ: ${TZ:-America/Sao_Paulo}
+      DB_HOST: mysql
+      DB_NAME: ${MYSQL_DATABASE:?}
+      DB_USER: ${MYSQL_USER:?}
+      DB_PASSWORD: ${MYSQL_PASSWORD:?}
+      PLC_INTERNAL_TOKEN: ${PLC_INTERNAL_TOKEN:?}
+      CAMERA_INTERNAL_TOKEN: ${CAMERA_INTERNAL_TOKEN:?}
+      LOGIN_EMAIL_DOMAIN: ${LOGIN_EMAIL_DOMAIN:-dallogix.local}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ./servidor:/var/www/servidor:ro
+      - ./armazenamento/producao-teste/storage:/var/www/armazenamento
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    depends_on: [php]
+    ports:
+      - '127.0.0.1:8443:443'
+      - '127.0.0.1:18080:80'
+    volumes:
+      - ./armazenamento/producao-teste/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./armazenamento/producao-teste/tls:/etc/nginx/tls:ro
+      - ./interface:/var/www/interface:ro
+      - ./servidor:/var/www/servidor:ro
+volumes:
+  production_test_mysql:
