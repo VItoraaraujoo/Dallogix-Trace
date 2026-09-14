@@ -3219,9 +3219,9 @@ body.mobile-menu-open { overflow: hidden; }
   font-size: 17px;
 }
 .dalas-reference-table th:nth-child(1),
-.dalas-reference-table td:nth-child(1) { width: 9%; }
+.dalas-reference-table td:nth-child(1) { width: 14%; }
 .dalas-reference-table th:nth-child(2),
-.dalas-reference-table td:nth-child(2) { width: 15%; }
+.dalas-reference-table td:nth-child(2) { width: 14%; }
 .dalas-reference-table th:nth-child(3),
 .dalas-reference-table td:nth-child(3) { width: 14%; }
 .dalas-reference-table th:nth-child(4),
@@ -3342,9 +3342,9 @@ body.mobile-menu-open { overflow: hidden; }
 .dalas-reference-table td strong { color: #142332; font-size: 19px; }
 .dalas-reference-table td code { color: #35566b; font-size: 16px; }
 .dalas-reference-table th:nth-child(1),
-.dalas-reference-table td:nth-child(1) { width: 9%; }
+.dalas-reference-table td:nth-child(1) { width: 14%; }
 .dalas-reference-table th:nth-child(2),
-.dalas-reference-table td:nth-child(2) { width: 15%; }
+.dalas-reference-table td:nth-child(2) { width: 14%; }
 .dalas-reference-table th:nth-child(3),
 .dalas-reference-table td:nth-child(3) { width: 14%; }
 .dalas-reference-table th:nth-child(4),
@@ -3354,7 +3354,7 @@ body.mobile-menu-open { overflow: hidden; }
 .dalas-reference-table th:nth-child(6),
 .dalas-reference-table td:nth-child(6) { width: 18%; }
 .dalas-reference-table th:nth-child(7),
-.dalas-reference-table td:nth-child(7) { width: 28%; }
+.dalas-reference-table td:nth-child(7) { width: 24%; }
 .dala-status { color: #69808f; font-size: 14px; }
 .dala-status .status-dot {
   width: 9px;
