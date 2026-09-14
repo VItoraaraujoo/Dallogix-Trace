@@ -3295,3 +3295,114 @@ body.mobile-menu-open { overflow: hidden; }
   .dala-reference-actions { flex-wrap: wrap; }
   .dala-reference-action { flex: 1 1 auto; }
 }
+
+/* A tela de Dalas segue a paleta clara global; o refinamento é apenas estrutural. */
+.dalas-reference-screen {
+  width: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+}
+.dalas-reference-header { margin: 0 0 24px; }
+.dalas-reference-header h2 {
+  color: #142332;
+  font-size: 30px;
+  letter-spacing: normal;
+}
+.dalas-reference-header .button.primary {
+  min-width: 140px;
+  min-height: 44px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: inherit;
+}
+.dalas-reference-table-wrap {
+  border: 1px solid #d7e2e9;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 8px 22px rgba(20, 35, 50, 0.06);
+}
+.dalas-reference-table th,
+.dalas-reference-table td { border-bottom-color: #e5edf1; }
+.dalas-reference-table th {
+  padding: 20px 18px;
+  background: #f7fafb;
+  color: #62798a;
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.dalas-reference-table td {
+  padding: 20px 18px;
+  color: #263b4b;
+  font-size: 14px;
+}
+.dalas-reference-table td strong { color: #142332; font-size: 15px; }
+.dalas-reference-table td code { color: #35566b; font-size: inherit; }
+.dalas-reference-table th:nth-child(1),
+.dalas-reference-table td:nth-child(1) { width: 10%; }
+.dalas-reference-table th:nth-child(2),
+.dalas-reference-table td:nth-child(2) { width: 16%; }
+.dalas-reference-table th:nth-child(3),
+.dalas-reference-table td:nth-child(3) { width: 15%; }
+.dalas-reference-table th:nth-child(4),
+.dalas-reference-table td:nth-child(4),
+.dalas-reference-table th:nth-child(5),
+.dalas-reference-table td:nth-child(5) { width: 9%; }
+.dalas-reference-table th:nth-child(6),
+.dalas-reference-table td:nth-child(6) { width: 21%; }
+.dalas-reference-table th:nth-child(7),
+.dalas-reference-table td:nth-child(7) { width: 20%; }
+.dala-status { color: #69808f; font-size: 12px; }
+.dala-status .status-dot {
+  width: 9px;
+  height: 9px;
+  margin-top: 5px;
+  background: #b8c2cc;
+  box-shadow: none;
+}
+.dala-reference-actions { flex-wrap: nowrap; gap: 7px; }
+.dala-reference-action {
+  min-height: 36px;
+  padding: 7px 11px;
+  border: 1px solid #b6c7d1;
+  border-radius: 8px;
+  background: #fff;
+  color: #245c79;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.dala-reference-action:hover,
+.dala-reference-action:focus-visible {
+  border-color: #1daac4;
+  background: #edf9fb;
+  color: #245c79;
+}
+.dala-reference-action.danger { color: #a33443; }
+.empty-cell { color: #69808f !important; }
+@media (max-width: 1200px) and (min-width: 761px) {
+  .dalas-reference-table th,
+  .dalas-reference-table td { padding-inline: 12px; }
+  .dala-reference-action { padding-inline: 8px; font-size: 11px; }
+}
+@media (max-width: 760px) {
+  .dalas-reference-screen {
+    width: 100%;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+  }
+  .dalas-reference-header { margin-bottom: 18px; }
+  .dalas-reference-header h2 { font-size: 26px; }
+  .dalas-reference-header .button.primary { min-height: 44px; font-size: inherit; }
+  .dalas-reference-table-wrap { border-radius: 14px; }
+  .dalas-reference-table tr { border-bottom-color: #e5edf1; }
+  .dalas-reference-table td,
+  .dalas-reference-table td code { color: #263b4b; font-size: 14px; }
+  .dalas-reference-table td strong { color: #142332; font-size: 15px; }
+  .dalas-reference-table td::before { color: #69808f; }
+  .dala-reference-actions { flex-wrap: wrap; }
+  .dala-reference-action { flex: 1 1 auto; }
+}
