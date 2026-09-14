@@ -5,7 +5,7 @@ const formatDate = (value) =>
   value ? String(value).replace(" ", " • ").split(".")[0] : "—";
 
 function dalaStatusCell(equipment) {
-  return `<td class="dala-status" data-equipment-id="${equipment.id}"><span class="status-dot"></span>Verificando…</td>`;
+  return `<div class="dala-status" data-equipment-id="${equipment.id}"><span class="status-dot"></span>Verificando…</div>`;
 }
 
 export function dalas(store) {
@@ -27,27 +27,12 @@ export function dalas(store) {
 <label>Porta externa no gateway<input name="external_port" type="number" min="1" max="65535" /><small>Porta TCP pública do gateway que encaminha a comunicação para esta Dala.</small></label>
 </div><div class="actions">${button("Cadastrar Dala", "submit-dala")}</div></form></section></div>`;
   }
-  return `<div class="title-row with-actions"><div><h2>Dalas</h2></div>${canManage ? button(open ? "Fechar formulário" : "Nova Dala", "toggle-dala-form") : ""}</div>
-<section class="panel reference-table-panel"><div class="table-wrap"><table><thead><tr><th>Nome da Dala</th><th>Identificador da Dala</th><th>IP do CLP</th><th>Porta do CLP</th><th>Porta Externa</th><th>Status</th><th>Ações</th></tr></thead><tbody>
-${
-  rows.length
-    ? rows
-        .map(
-          (equipment) => `<tr>
-<td><strong>${esc(equipment.name)}</strong></td>
-<td><code>${esc(equipment.equipment_code)}</code></td>
-<td>${esc(equipment.plc_ip || "—")}</td>
-<td>${equipment.plc_port || "—"}</td>
-<td>${equipment.external_port || "—"}</td>
-${dalaStatusCell(equipment)}
-<td><div class="table-actions"><button class="text-link" data-action="view-dala" data-id="${equipment.id}" type="button">Visualizar</button>${canManage ? `<button class="text-link" data-action="edit-dala" data-id="${equipment.id}" type="button">Editar</button><button class="text-link" data-action="dala-actions" data-id="${equipment.id}" type="button">Ações</button>` : ""}${canDelete ? `<button class="text-link danger-link" data-action="delete-dala" data-id="${equipment.id}" data-name="${esc(equipment.name)}" type="button">Excluir</button>` : ""}</div></td>
-</tr>`,
-        )
-        .join("")
-    : '<tr><td colspan="7" class="empty-cell">Nenhuma Dala cadastrada.</td></tr>'
-}
-</tbody></table></div></section>
-<section class="panel compact-help"><strong>Comunicação</strong><p>O CLP permanece responsável pelo controle físico. O Trace acompanha o status do serviço Modbus de cada Dala através do gateway do cliente. A integração depende da definição do protocolo definitivo do serviço Dala-Modbus.</p></section>`;
+  return `<section class="dalas-catalog"><div class="title-row with-actions"><div><h2>Dalas</h2><p>Equipamentos e configurações de conexão.</p></div>${canManage ? button("Nova Dala", "toggle-dala-form") : ""}</div>
+<div class="dalas-register-list">${rows.length ? rows.map((equipment) => `<article class="dala-register">
+<header class="dala-register-heading"><div><h3>${esc(equipment.name)}</h3><p>Identificador <code>${esc(equipment.equipment_code)}</code></p></div><div class="dala-register-status"><span class="dala-field-label">Comunicação</span>${dalaStatusCell(equipment)}</div></header>
+<dl class="dala-register-connection"><div><dt>IP do CLP</dt><dd>${esc(equipment.plc_ip || "Não configurado")}</dd></div><div><dt>Porta do CLP</dt><dd>${esc(equipment.plc_port || "—")}</dd></div><div><dt>Porta externa</dt><dd>${esc(equipment.external_port || "—")}</dd></div></dl>
+<footer class="dala-register-actions"><button class="text-link" data-action="view-dala" data-id="${equipment.id}" type="button">Visualizar</button>${canManage ? `<button class="text-link" data-action="edit-dala" data-id="${equipment.id}" type="button">Editar</button><button class="text-link" data-action="dala-actions" data-id="${equipment.id}" type="button">Ações</button>` : ""}${canDelete ? `<button class="text-link danger-link" data-action="delete-dala" data-id="${equipment.id}" data-name="${esc(equipment.name)}" type="button">Excluir</button>` : ""}</footer>
+</article>`).join("") : '<div class="panel empty-cell">Nenhuma Dala cadastrada.</div>'}</div></section>`;
 }
 
 // Tela Visualizar Dala: cartões com dados cadastrais e status de comunicação.
