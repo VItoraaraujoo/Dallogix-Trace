@@ -107,7 +107,7 @@ export function dalaEdit(store) {
   const dala = store.state.equipmentDetail;
   if (!dala)
     return `${pageHeader("Cadastros / Dalas", "Editar Dala", "Carregando…")}`;
-  return `<div class="title-row with-actions dala-page-header"><div><h2>Editar Dala ${esc(dala.equipment_code)}</h2></div><div class="actions"><button class="button secondary page-back" data-action="view-dala" data-id="${dala.id}" type="button">← Voltar</button></div></div>
+  return `<div class="title-row with-actions dala-page-header"><div><h2>Editar Dala ${esc(dala.equipment_code)}</h2></div><div class="actions"><button class="button secondary page-back" data-action="back-dala" type="button">← Voltar</button></div></div>
 <form id="dala-edit-form" data-id="${dala.id}">
 <section class="panel"><div class="grid one">
 <label>Nome da Dala<input name="name" required value="${esc(dala.name)}" /></label>

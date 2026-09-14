@@ -2,7 +2,7 @@ import { ArmazenamentoTrace } from "./classes/ArmazenamentoTrace.js?v=2026091402
 import { FORM_ACTIONS } from "./constantes/acoes.js?v=202609140210";
 import { el, esc } from "./funcoes/html.js";
 import { settings } from "./telas/configuracoes.js?v=202609140210";
-import { dalaActions, dalaEdit, dalas, dalaView } from "./telas/dalas.js?v=202609142245";
+import { dalaActions, dalaEdit, dalas, dalaView } from "./telas/dalas.js?v=202609142300";
 import { company } from "./telas/empresa.js";
 import { companies } from "./telas/empresas.js";
 import { errorLogs } from "./telas/logs.js";
