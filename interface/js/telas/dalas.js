@@ -5,7 +5,7 @@ const formatDate = (value) =>
   value ? String(value).replace(" ", " • ").split(".")[0] : "—";
 
 function dalaStatusCell(equipment) {
-  return `<td class="dala-status" data-equipment-id="${equipment.id}"><span class="status-dot"></span>Verificando…</td>`;
+  return `<td data-label="Status" class="dala-status" data-equipment-id="${equipment.id}"><span class="status-dot"></span>Verificando…</td>`;
 }
 
 export function dalas(store) {
@@ -27,19 +27,19 @@ export function dalas(store) {
 </div><div class="actions">${button("Cadastrar Dala", "submit-dala")}</div></form></section></div>`;
   }
   return `<div class="title-row with-actions"><div><h2>Dalas</h2></div>${canManage ? button(open ? "Fechar formulário" : "Nova Dala", "toggle-dala-form") : ""}</div>
-<section class="panel reference-table-panel"><div class="table-wrap"><table><thead><tr><th>Nome da Dala</th><th>Identificador da Dala</th><th>IP do CLP</th><th>Porta do CLP</th><th>Porta Externa</th><th>Status</th><th>Ações</th></tr></thead><tbody>
+<section class="panel reference-table-panel dalas-list-panel"><div class="table-wrap"><table><thead><tr><th>Nome da Dala</th><th>Identificador da Dala</th><th>IP do CLP</th><th>Porta do CLP</th><th>Porta Externa</th><th>Status</th><th>Ações</th></tr></thead><tbody>
 ${
   rows.length
     ? rows
         .map(
           (equipment) => `<tr>
-<td><strong>${esc(equipment.name)}</strong></td>
-<td><code>${esc(equipment.equipment_code)}</code></td>
-<td>${esc(equipment.plc_ip || "—")}</td>
-<td>${equipment.plc_port || "—"}</td>
-<td>${equipment.external_port || "—"}</td>
+<td data-label="Nome da Dala"><strong>${esc(equipment.name)}</strong></td>
+<td data-label="Identificador da Dala"><code>${esc(equipment.equipment_code)}</code></td>
+<td data-label="IP do CLP">${esc(equipment.plc_ip || "—")}</td>
+<td data-label="Porta do CLP">${equipment.plc_port || "—"}</td>
+<td data-label="Porta externa">${equipment.external_port || "—"}</td>
 ${dalaStatusCell(equipment)}
-<td><div class="table-actions"><button class="text-link" data-action="view-dala" data-id="${equipment.id}" type="button">Visualizar</button>${canManage ? `<button class="text-link" data-action="edit-dala" data-id="${equipment.id}" type="button">Editar</button><button class="text-link" data-action="dala-actions" data-id="${equipment.id}" type="button">Ações</button>` : ""}${canDelete ? `<button class="text-link danger-link" data-action="delete-dala" data-id="${equipment.id}" data-name="${esc(equipment.name)}" type="button">Excluir</button>` : ""}</div></td>
+<td data-label="Ações"><div class="table-actions"><button class="text-link" data-action="view-dala" data-id="${equipment.id}" type="button">Visualizar</button>${canManage ? `<button class="text-link" data-action="edit-dala" data-id="${equipment.id}" type="button">Editar</button><button class="text-link" data-action="dala-actions" data-id="${equipment.id}" type="button">Ações</button>` : ""}${canDelete ? `<button class="text-link danger-link" data-action="delete-dala" data-id="${equipment.id}" data-name="${esc(equipment.name)}" type="button">Excluir</button>` : ""}</div></td>
 </tr>`,
         )
         .join("")
