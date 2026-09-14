@@ -1,8 +1,8 @@
 import { ArmazenamentoTrace } from "./classes/ArmazenamentoTrace.js";
 import { FORM_ACTIONS } from "./constantes/acoes.js";
 import { el, esc } from "./funcoes/html.js";
-import { settings } from "./telas/configuracoes.js?v=2";
-import { dalaActions, dalaEdit, dalas, dalaView } from "./telas/dalas.js?v=3";
+import { settings } from "./telas/configuracoes.js?v=202609140126";
+import { dalaActions, dalaEdit, dalas, dalaView } from "./telas/dalas.js?v=202609140126";
 import { company } from "./telas/empresa.js";
 import { companies } from "./telas/empresas.js";
 import { errorLogs } from "./telas/logs.js";
@@ -22,7 +22,7 @@ import {
     manifests,
     manifestView,
     work,
-} from "./telas/operacoes.js?v=2";
+} from "./telas/operacoes.js?v=202609140126";
 import { dashboard } from "./telas/painel.js";
 import { users } from "./telas/usuarios.js";
 import { atualizarStatusDasDalas, linhaItemRomaneio } from "./controladores/operacao.js";
