@@ -90,10 +90,10 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
     json_response(["data" => $query->fetchAll()]);
 }
 
-$validatePayload = static function (array $payload) use (
+$validatePayload = static function (array $payload, ?string $existingCode = null) use (
     $validIdentifier,
 ): array {
-    $code = trim((string) ($payload["equipment_code"] ?? ""));
+    $code = trim((string) ($payload["equipment_code"] ?? $existingCode ?? ""));
     $name = trim((string) ($payload["name"] ?? ""));
     $ip = trim((string) ($payload["plc_ip"] ?? ""));
     $port = filter_var($payload["plc_port"] ?? 502, FILTER_VALIDATE_INT);
@@ -105,7 +105,7 @@ $validatePayload = static function (array $payload) use (
     $protocol = strtoupper(
         trim((string) ($payload["plc_protocol"] ?? "MODBUS_TCP")),
     );
-    if (!$validIdentifier($code)) {
+    if ($code !== $existingCode && !$validIdentifier($code)) {
         json_response(
             [
                 "error" =>
@@ -149,7 +149,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             403,
         );
     }
-    $data = $validatePayload(request_json());
+    $payload = request_json();
+    if (trim((string) ($payload["equipment_code"] ?? "")) === "") {
+        $payload["equipment_code"] = "dala_" . bin2hex(random_bytes(12));
+    }
+    $data = $validatePayload($payload);
     try {
         $insert = $pdo->prepare(
             "INSERT INTO equipamentos (company_id, equipment_code, name, plc_ip, plc_port, external_port, plc_protocol) VALUES (:company_id, :equipment_code, :name, :plc_ip, :plc_port, :external_port, :plc_protocol)",
@@ -198,13 +202,14 @@ if ($_SERVER["REQUEST_METHOD"] === "PUT") {
         json_response(["error" => "Dala não informada."], 422);
     }
     $find = $pdo->prepare(
-        "SELECT id FROM equipamentos WHERE id = :id AND company_id = :company_id LIMIT 1",
+        "SELECT id, equipment_code FROM equipamentos WHERE id = :id AND company_id = :company_id LIMIT 1",
     );
     $find->execute(["id" => $id, "company_id" => $user["company_id"]]);
-    if (!$find->fetch()) {
+    $existing = $find->fetch();
+    if (!$existing) {
         json_response(["error" => "Dala não encontrada."], 404);
     }
-    $data = $validatePayload($payload);
+    $data = $validatePayload($payload, $existing["equipment_code"]);
     try {
         $update = $pdo->prepare(
             "UPDATE equipamentos SET equipment_code = :equipment_code, name = :name, plc_ip = :plc_ip, plc_port = :plc_port, external_port = :external_port, plc_protocol = :plc_protocol WHERE id = :id",

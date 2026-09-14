@@ -41,15 +41,15 @@ export function settings(store) {
   return `<div class="title-row"><div><h2>Configurações</h2></div></div>
 ${canManageUsers ? `<section class="panel settings-access-panel"><div class="panel-heading"><div><h3>Gerenciar usuários</h3><p>Crie e gerencie os usuários, perfis e acessos da empresa.</p></div>${button("Abrir gerenciamento de usuários", "open-users", "primary")}</div></section><br>` : ""}
 <section class="panel"><h3>Rede do cliente</h3>
-<p>Configure o IP público do gateway do cliente. O Trace usará esse endereço com a porta externa de cada dala para alcançar o serviço dala-modbus na fábrica.</p>
+<p>Configure o IP público do gateway do cliente. O Trace usará esse endereço com a porta externa de cada Dala para alcançar o serviço dala-modbus na fábrica.</p>
 <form id="network-form"><label>IP público do gateway<input name="gateway_public_ip" value="${esc(saved.gateway_public_ip || "")}" placeholder="170.80.219.146" /><small>IP fixo ou DDNS do modem/roteador do cliente.</small></label>
 <div class="actions">${button("Salvar configuração", "save-network")}</div></form></section><br>
 <section class="panel"><h3>Conexão com o servidor</h3><p>A integração é executada no backend. Nenhuma URL ou credencial fica disponível nesta tela.</p><div class="sync-status-row"><span class="status-dot ${syncTone}"></span><strong>${syncLabel}</strong><span>${esc(syncDetail)}</span></div></section><br>
-<section class="panel"><div class="panel-heading"><h3>Dalas</h3><div class="actions">${button("Recarregar", "reload-dalas", "secondary")}${button("Gerenciar dalas", "goto-dalas")}</div></div>
-<p>Visão consolidada das dalas cadastradas e do status de comunicação com o serviço dala-modbus. A tabela abaixo é somente leitura — para cadastrar ou editar, use Gerenciar dalas.</p>
-<p><strong>Identificador:</strong> código único da máquina (letras minúsculas, números e underscores). Deve coincidir com o ID configurado no dala-modbus na fábrica para que comandos e verificação de status funcionem.</p>
+<section class="panel"><div class="panel-heading"><h3>Dalas</h3><div class="actions">${button("Recarregar", "reload-dalas", "secondary")}${button("Gerenciar Dalas", "goto-dalas")}</div></div>
+<p>Visão consolidada das Dalas cadastradas e do status de comunicação com o serviço dala-modbus. A tabela abaixo é somente leitura — para cadastrar ou editar, use Gerenciar Dalas.</p>
+<p><strong>Identificador:</strong> código único gerado automaticamente no cadastro da Dala. Deve coincidir com o ID configurado no dala-modbus na fábrica para que comandos e verificação de status funcionem.</p>
 <p><strong>IP do CLP:</strong> endereço IP do CLP na rede local da fábrica (ex.: 192.168.1.10). <strong>Porta do CLP:</strong> porta TCP do CLP para Modbus (geralmente 502). <strong>Porta Externa:</strong> porta TCP aberta no gateway público do cliente, redirecionada para o serviço dala-modbus na edge.</p>
-<div class="table-wrap"><table><thead><tr><th>Nome</th><th>Identificador</th><th>IP do CLP</th><th>Porta do CLP</th><th>Porta Externa</th><th>Status</th></tr></thead><tbody>${dalaRows}</tbody></table></div></section><br>
+<div class="table-wrap"><table><thead><tr><th>Nome da Dala</th><th>Identificador da Dala</th><th>IP do CLP</th><th>Porta do CLP</th><th>Porta Externa</th><th>Status</th></tr></thead><tbody>${dalaRows}</tbody></table></div></section><br>
 <section class="panel"><h3>Importação de romaneios (PDF)</h3>
 <p>Informe os nomes dos campos como aparecem no PDF. Identificador do produto e Quantidade são obrigatórios. Os demais (código, data, expedidor, placa, motorista) só serão extraídos se preenchidos. Escolha se o identificador corresponde ao código de barras ou ao SKU do cadastro.</p>
 <form id="pdf-settings-form"><div class="grid two">

@@ -18,17 +18,16 @@ export function dalas(store) {
     store.state.userRole,
   );
   if (open) {
-    return `<div class="dala-create-screen"><div class="title-row has-back"><button class="button secondary page-back" data-action="toggle-dala-form" type="button">← Voltar</button><div><h2>Nova dalla</h2><p>Cadastre a comunicação da esteira com o CLP e o gateway.</p></div></div>
+    return `<div class="dala-create-screen"><div class="title-row has-back"><button class="button secondary page-back" data-action="toggle-dala-form" type="button">← Voltar</button><div><h2>Nova Dala</h2><p>Cadastre a comunicação da Dala com o CLP e o gateway.</p></div></div>
 <section class="panel dala-create-panel"><form id="dala-create-form"><div class="grid one">
-<label>Nome<input name="name" autocomplete="off" required /></label>
-<label>Identificador<input name="equipment_code" autocomplete="off" required pattern="[a-z0-9_]{1,30}" title="Letras minúsculas, números e underscores (máx. 30)" /><small>Use letras minúsculas, números e underscore. Máximo de 30 caracteres.</small></label>
+<label>Nome da Dala<input name="name" autocomplete="off" required /></label>
 <label>IP do CLP<input name="plc_ip" inputmode="decimal" autocomplete="off" required /></label>
 <label>Porta do CLP<input name="plc_port" type="number" value="502" min="1" max="65535" required /></label>
-<label>Porta externa no gateway<input name="external_port" type="number" min="1" max="65535" /><small>Porta TCP pública do gateway que encaminha a comunicação para esta dalla.</small></label>
-</div><div class="actions">${button("Cadastrar dalla", "submit-dala")}</div></form></section></div>`;
+<label>Porta externa no gateway<input name="external_port" type="number" min="1" max="65535" /><small>Porta TCP pública do gateway que encaminha a comunicação para esta Dala.</small></label>
+</div><div class="actions">${button("Cadastrar Dala", "submit-dala")}</div></form></section></div>`;
   }
-  return `<div class="title-row with-actions"><div><h2>Dalas</h2></div>${canManage ? button(open ? "Fechar formulário" : "Nova dala", "toggle-dala-form") : ""}</div>
-<section class="panel reference-table-panel"><div class="table-wrap"><table><thead><tr><th>Nome</th><th>Identificador</th><th>IP do CLP</th><th>Porta do CLP</th><th>Porta Externa</th><th>Status</th><th>Ações</th></tr></thead><tbody>
+  return `<div class="title-row with-actions"><div><h2>Dalas</h2></div>${canManage ? button(open ? "Fechar formulário" : "Nova Dala", "toggle-dala-form") : ""}</div>
+<section class="panel reference-table-panel"><div class="table-wrap"><table><thead><tr><th>Nome da Dala</th><th>Identificador da Dala</th><th>IP do CLP</th><th>Porta do CLP</th><th>Porta Externa</th><th>Status</th><th>Ações</th></tr></thead><tbody>
 ${
   rows.length
     ? rows
@@ -50,10 +49,10 @@ ${dalaStatusCell(equipment)}
 <section class="panel compact-help"><strong>Comunicação</strong><p>O CLP permanece responsável pelo controle físico. O Trace acompanha o status do serviço Modbus de cada Dala através do gateway do cliente. A integração depende da definição do protocolo definitivo do serviço Dala-Modbus.</p></section>`;
 }
 
-// Tela Visualizar dala: cartões com dados cadastrais e status de comunicação.
+// Tela Visualizar Dala: cartões com dados cadastrais e status de comunicação.
 export function dalaView(store) {
   const dala = store.state.equipmentDetail;
-  if (!dala) return `${pageHeader("Cadastros / dalas", "Dala", "Carregando…")}`;
+  if (!dala) return `${pageHeader("Cadastros / Dalas", "Dala", "Carregando…")}`;
   const operation = (store.state.monitoring?.maquinas || []).find(
     (item) => Number(item.id) === Number(dala.id),
   ) || {};
@@ -63,7 +62,7 @@ export function dalaView(store) {
     planned > 0 ? Math.min(100, Math.round((loaded / planned) * 100)) : 0;
   const commands = store.state.dalaCommands || [];
   const commandRows = commands.length ? commands.map((command) => `<tr><td>#${command.id}</td><td><code>${esc(command.command)}</code></td><td>${esc(command.status)}</td><td>${esc(command.requested_at || "—")}</td><td>${esc(command.response_message || "Aguardando resposta")}</td></tr>`).join("") : '<tr><td colspan="5" class="empty-cell">Nenhum comando registrado para esta Dala.</td></tr>';
-  return `<div class="title-row with-actions dala-page-header"><div><h2>Dala ${esc(dala.equipment_code)}</h2></div><div class="actions"><button class="button secondary page-back" data-action="back-dala" type="button">← Voltar</button></div></div>
+  return `<div class="title-row with-actions dala-page-header"><div><h2>Dala ${esc(dala.name)}</h2></div><div class="actions"><button class="button secondary page-back" data-action="back-dala" type="button">← Voltar</button></div></div>
 <section class="panel"><h3>Estatísticas da Dala</h3><div class="grid four">
   <div class="metric"><small>Estado da operação</small><strong>${esc(operation.carregamento_state || "Sem operação")}</strong></div>
   <div class="metric"><small>Romaneio atual</small><strong>${esc(operation.romaneio_number ? `#${operation.romaneio_number}` : "—")}</strong></div>
@@ -73,8 +72,8 @@ export function dalaView(store) {
 <section class="panel"><p id="dala-view-status" class="dala-status-line" data-equipment-id="${dala.id}"><span class="status-dot"></span>Verificando comunicação com o serviço Modbus…</p></section><br>
 <section class="panel"><div class="panel-heading"><div><h3>Diagnóstico do CLP</h3><p class="muted">Comandos enviados, status do gateway e retorno registrado.</p></div><button class="button secondary" data-action="reload-dala-diagnostics" data-id="${dala.id}" type="button">Atualizar</button></div><div class="table-wrap"><table><thead><tr><th>ID</th><th>Comando</th><th>Status</th><th>Solicitado em</th><th>Resposta</th></tr></thead><tbody>${commandRows}</tbody></table></div></section><br>
 <div class="grid two detail-cards">
-<div class="panel detail-card"><small>Nome</small><strong>${esc(dala.name)}</strong></div>
-<div class="panel detail-card"><small>Identificador</small><strong><code>${esc(dala.equipment_code)}</code></strong></div>
+<div class="panel detail-card"><small>Nome da Dala</small><strong>${esc(dala.name)}</strong></div>
+<div class="panel detail-card"><small>Identificador da Dala</small><strong><code>${esc(dala.equipment_code)}</code></strong></div>
 <div class="panel detail-card"><small>IP do CLP</small><strong>${esc(dala.plc_ip || "—")}</strong></div>
 <div class="panel detail-card"><small>Porta do CLP</small><strong>${dala.plc_port || "—"}</strong></div>
 <div class="panel detail-card"><small>Porta externa no gateway</small><strong>${dala.external_port || "—"}</strong></div>
@@ -86,7 +85,7 @@ export function dalaView(store) {
 
 export function dalaActions(store) {
   const dala = store.state.equipmentDetail;
-  if (!dala) return `${pageHeader("Cadastros / dalas", "Ações", "Carregando…")}`;
+  if (!dala) return `${pageHeader("Cadastros / Dalas", "Ações", "Carregando…")}`;
   const config = store.state.dalaActionConfig || { acoes: [], gatilhos: [] };
   const canManage = Boolean(config.can_manage);
   const actions = config.acoes || [];
@@ -113,16 +112,15 @@ export function dalaActions(store) {
   <section class="panel compact-help"><strong>Segurança operacional</strong><p>Esta tela configura as ações e gatilhos. A execução passa pela operação e pelo gateway industrial; o CLP mantém os intertravamentos físicos e registra a resposta no diagnóstico da Dala.</p></section>`;
 }
 
-// Tela Editar dala: mesmo formulário da criação, com dados preenchidos.
+// Tela Editar Dala: mesmo formulário da criação, com dados preenchidos.
 export function dalaEdit(store) {
   const dala = store.state.equipmentDetail;
   if (!dala)
-    return `${pageHeader("Cadastros / dalas", "Editar dala", "Carregando…")}`;
-  return `<div class="title-row with-actions dala-page-header"><div><h2>Editar dala ${esc(dala.equipment_code)}</h2></div><div class="actions"><button class="button secondary page-back" data-action="view-dala" data-id="${dala.id}" type="button">← Voltar</button></div></div>
+    return `${pageHeader("Cadastros / Dalas", "Editar Dala", "Carregando…")}`;
+  return `<div class="title-row with-actions dala-page-header"><div><h2>Editar Dala ${esc(dala.name)}</h2></div><div class="actions"><button class="button secondary page-back" data-action="view-dala" data-id="${dala.id}" type="button">← Voltar</button></div></div>
 <form id="dala-edit-form" data-id="${dala.id}">
 <section class="panel"><div class="grid one">
-<label>Nome<input name="name" required value="${esc(dala.name)}" /></label>
-<label>Identificador<input name="equipment_code" required pattern="[a-z0-9_]{1,30}" title="Letras minúsculas, números e underscores (máx. 30)" value="${esc(dala.equipment_code)}" /><small>Letras minúsculas, números e underscores (máx. 30 caracteres)</small></label>
+<label>Nome da Dala<input name="name" required value="${esc(dala.name)}" /></label>
 <label>IP do CLP<input name="plc_ip" required value="${esc(dala.plc_ip || "")}" /></label>
 <label>Porta do CLP<input name="plc_port" type="number" min="1" max="65535" required value="${dala.plc_port || 502}" /></label>
 <label>Porta externa no gateway<input name="external_port" type="number" min="1" max="65535" value="${dala.external_port || ""}" /><small>Porta TCP no gateway público do cliente, redirecionada para o serviço dala-modbus na edge.</small></label>

@@ -1,8 +1,8 @@
 import { ArmazenamentoTrace } from "./classes/ArmazenamentoTrace.js";
 import { FORM_ACTIONS } from "./constantes/acoes.js";
 import { el, esc } from "./funcoes/html.js";
-import { settings } from "./telas/configuracoes.js";
-import { dalaActions, dalaEdit, dalas, dalaView } from "./telas/dalas.js?v=2";
+import { settings } from "./telas/configuracoes.js?v=2";
+import { dalaActions, dalaEdit, dalas, dalaView } from "./telas/dalas.js?v=3";
 import { company } from "./telas/empresa.js";
 import { companies } from "./telas/empresas.js";
 import { errorLogs } from "./telas/logs.js";
@@ -22,7 +22,7 @@ import {
     manifests,
     manifestView,
     work,
-} from "./telas/operacoes.js";
+} from "./telas/operacoes.js?v=2";
 import { dashboard } from "./telas/painel.js";
 import { users } from "./telas/usuarios.js";
 import { atualizarStatusDasDalas, linhaItemRomaneio } from "./controladores/operacao.js";
@@ -820,8 +820,8 @@ function bindActions() {
           alert("Somente administradores podem excluir Dala.");
           return;
         }
-        if (!confirm(`Excluir a dala "${node.dataset.name}"?`)) return;
-        if (!confirm(`SEGUNDA CONFIRMAÇÃO: excluir a dala "${node.dataset.name}" definitivamente?`)) return;
+        if (!confirm(`Excluir a Dala "${node.dataset.name}"?`)) return;
+        if (!confirm(`SEGUNDA CONFIRMAÇÃO: excluir a Dala "${node.dataset.name}" definitivamente?`)) return;
         try {
           await store.deleteEquipment(node.dataset.id);
           alert("Dala excluída.");
