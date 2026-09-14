@@ -37,12 +37,12 @@
 
     .dalas-reference-table th:nth-child(6),
     .dalas-reference-table td:nth-child(6) {
-        width: 18%;
+        width: 15%;
     }
 
     .dalas-reference-table th:nth-child(7),
     .dalas-reference-table td:nth-child(7) {
-        width: 27%;
+        width: 30%;
     }
 
     .dala-reference-actions {
