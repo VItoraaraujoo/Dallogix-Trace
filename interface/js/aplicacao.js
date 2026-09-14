@@ -474,6 +474,21 @@ function bindActions() {
         );
         return;
       }
+      if (action === "clear-integration-token") {
+        store.state.newIntegrationToken = null;
+        render();
+        return;
+      }
+      if (action === "revoke-integration") {
+        if (!confirm(`Revogar a integração "${node.dataset.label}"? O outro sistema perderá o acesso imediatamente.`)) return;
+        try {
+          await store.revokeIntegration(node.dataset.id);
+          render();
+        } catch (error) {
+          alert(error.message);
+        }
+        return;
+      }
       if (action === "toggle-user") {
         const active = node.dataset.active !== "1";
         if (
@@ -1122,6 +1137,23 @@ function bindForms() {
         alert(error.message);
       }
     });
+  const integrationForm = document.querySelector("#integration-form");
+  if (integrationForm)
+    integrationForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const raw = new FormData(integrationForm);
+      const scopes = raw.getAll("scopes");
+      try {
+        await store.createIntegration({
+          label: raw.get("label"),
+          expires_at: raw.get("expires_at"),
+          scopes,
+        });
+        render();
+      } catch (error) {
+        alert(error.message);
+      }
+    });
   const productForm = document.querySelector("#product-form");
   if (productForm)
     productForm.addEventListener("submit", async (event) => {
@@ -1498,7 +1530,7 @@ async function loadPageData(page) {
         new URLSearchParams(window.location.search).get("company_id") || null;
       if (store.state.selectedCompanyId) await store.loadUsers();
     }
-    if (page === "settings") await store.loadConfiguration();
+    if (page === "settings") await Promise.all([store.loadConfiguration(), store.loadIntegrations()]);
     return;
   }
   const tasks = {
@@ -1532,7 +1564,7 @@ async function loadPageData(page) {
       store.loadSyncStatus(),
     ],
     emergency: () => [store.loadActiveLoading(), store.loadMonitoring()],
-    settings: () => [store.loadConfiguration(), store.loadEquipments(), store.loadSyncStatus()],
+    settings: () => [store.loadConfiguration(), store.loadIntegrations(), store.loadEquipments(), store.loadSyncStatus()],
     dalas: () => [store.loadEquipments()],
     dala: () => [loadDalaView(queryId())],
     "dala-edit": () => [store.loadEquipment(queryId())],
