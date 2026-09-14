@@ -55,8 +55,9 @@
     }
 
     .dala-reference-action {
-        padding-inline: 8px;
-        font-size: 11px;
+        min-height: 42px;
+        padding: 9px 13px;
+        font-size: 13px;
     }
 }
 
