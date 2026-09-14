@@ -2939,7 +2939,8 @@ p { line-height: 1.5; }
   .shell .topbar h1 { min-width: 0; font-size: 14px; }
   .shell .topbar .local { display: none; }
   .shell .sidebar-toggle { flex: 0 0 48px; width: 48px; height: 48px; }
-  .shell .sidebar nav { display: block; }
+  .shell .sidebar nav,
+  .shell.sidebar-collapsed .sidebar nav { display: block; }
   .shell .sidebar .brand { display: block; min-height: 72px; margin: 0 0 16px; }
   .shell .sidebar .brand img { width: 138px; }
   .shell .sidebar .nav-label,
@@ -2958,6 +2959,7 @@ p { line-height: 1.5; }
   }
   .shell .sidebar .nav-icon,
   .shell .sidebar .nav-icon svg { width: 26px; height: 26px; }
-  .shell .sidebar footer { display: block; padding: 16px 0; text-align: left; }
+  .shell .sidebar footer,
+  .shell.sidebar-collapsed .sidebar footer { display: block; padding: 16px 0; text-align: left; }
   .shell .sidebar .nav-item::before { display: none; }
 }
