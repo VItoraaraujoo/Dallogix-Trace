@@ -406,6 +406,11 @@ function bindActions() {
       }
       if (action === "toggle-menu") {
         const shell = document.querySelector(".shell");
+        if (window.matchMedia("(max-width: 760px)").matches) {
+          const open = shell?.classList.toggle("mobile-menu-open") || false;
+          node.setAttribute("aria-expanded", String(open));
+          return;
+        }
         const collapsed = shell
           ? shell.classList.toggle("sidebar-collapsed")
           : false;
@@ -1017,6 +1022,10 @@ function bindActions() {
       )
         return;
       event.preventDefault();
+      if (window.matchMedia("(max-width: 760px)").matches) {
+        document.querySelector(".shell")?.classList.remove("mobile-menu-open");
+        document.querySelector('[data-action="toggle-menu"]')?.setAttribute("aria-expanded", "false");
+      }
       navigate(item.dataset.page);
     });
   });

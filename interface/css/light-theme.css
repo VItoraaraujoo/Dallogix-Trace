@@ -2905,3 +2905,59 @@ p { line-height: 1.5; }
   .pdf-import-card .actions { justify-content: stretch; }
   .pdf-import-card .actions .button { width: 100%; }
 }
+
+/* No celular, o botão controla um menu lateral sobre o conteúdo. */
+@media (max-width: 760px) {
+  .shell .sidebar,
+  .shell.sidebar-collapsed .sidebar {
+    position: fixed;
+    top: 76px;
+    bottom: 0;
+    left: 0;
+    width: min(280px, 85vw);
+    height: calc(100dvh - 76px);
+    min-height: 0;
+    padding: 16px;
+    overflow-y: auto;
+    background: #fff;
+    transform: translateX(-100%);
+    visibility: hidden;
+    z-index: 100;
+  }
+  .shell.mobile-menu-open .sidebar { transform: translateX(0); visibility: visible; }
+  .shell .main { margin-left: 0; min-width: 0; }
+  .shell .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 101;
+    height: 76px;
+    min-height: 76px;
+    padding: 8px 12px;
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+  .shell .topbar h1 { min-width: 0; font-size: 14px; }
+  .shell .topbar .local { display: none; }
+  .shell .sidebar-toggle { flex: 0 0 48px; width: 48px; height: 48px; }
+  .shell .sidebar nav { display: block; }
+  .shell .sidebar .brand { display: block; min-height: 72px; margin: 0 0 16px; }
+  .shell .sidebar .brand img { width: 138px; }
+  .shell .sidebar .nav-label,
+  .shell .sidebar .nav-text,
+  .shell .sidebar .user-name,
+  .shell .sidebar footer b,
+  .shell .sidebar .logout-link { display: block; }
+  .shell .sidebar .nav-item {
+    display: flex !important;
+    width: auto;
+    height: auto;
+    min-height: 48px;
+    margin: 4px 0;
+    padding: 10px 12px;
+    justify-content: flex-start;
+  }
+  .shell .sidebar .nav-icon,
+  .shell .sidebar .nav-icon svg { width: 26px; height: 26px; }
+  .shell .sidebar footer { display: block; padding: 16px 0; text-align: left; }
+  .shell .sidebar .nav-item::before { display: none; }
+}
