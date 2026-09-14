@@ -11,8 +11,18 @@
 
 @media (min-width: 761px) {
 
-    .dalas-reference-table th {
+    .dalas-reference-table th,
+    .dalas-reference-table td {
         text-align: center;
+    }
+
+    .dalas-reference-table .dala-status {
+        justify-content: center;
+        text-align: left;
+    }
+
+    .dalas-reference-table .dala-reference-actions {
+        justify-content: center;
     }
 
     .dalas-reference-table th:nth-child(1),
