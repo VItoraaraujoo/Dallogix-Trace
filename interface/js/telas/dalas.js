@@ -27,7 +27,7 @@ export function dalas(store) {
 <label>Porta externa no gateway<input name="external_port" type="number" min="1" max="65535" /><small>Porta TCP pública do gateway que encaminha a comunicação para esta Dala.</small></label>
 </div><div class="actions">${button("Cadastrar Dala", "submit-dala")}</div></form></section></div>`;
   }
-  return `<section class="dalas-catalog dalas-reference-screen"><div class="dalas-reference-header"><h2>Dalas</h2>${canManage ? button("Nova Dala", "toggle-dala-form", "primary") : ""}</div>
+  return `<section class="dalas-catalog dalas-reference-screen"><div class="dalas-reference-header"><h2>Dalas</h2>${canManage ? button("Nova dala", "toggle-dala-form", "primary") : ""}</div>
 <div class="dalas-reference-table-wrap"><table class="dalas-reference-table"><thead><tr><th>Nome</th><th>Identificador</th><th>IP do CLP</th><th>Porta do CLP</th><th>Porta<br>Externa</th><th>Status</th><th>Ações</th></tr></thead><tbody>${rows.length ? rows.map((equipment) => `<tr>
 <td data-label="Nome"><strong>${esc(equipment.name)}</strong></td>
 <td data-label="Identificador"><code>${esc(equipment.equipment_code)}</code></td>

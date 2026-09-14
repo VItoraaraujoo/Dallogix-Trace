@@ -3009,7 +3009,7 @@ body.mobile-menu-open { overflow: hidden; }
   .dala-register-actions .danger-link { margin-left: 0; }
 }
 
-/* Catálogo de Dalas: tabela alinhada, sem alterar a paleta geral do sistema. */
+/* Catálogo de Dalas: tabela alinhada e responsiva. */
 .dalas-reference-screen {
   width: 100%;
   min-width: 0;
@@ -3158,5 +3158,140 @@ body.mobile-menu-open { overflow: hidden; }
   .dalas-reference-table td[data-label="Ações"] { display: block; padding-top: 14px; }
   .dalas-reference-table td[data-label="Ações"]::before { display: block; margin-bottom: 8px; }
   .dala-reference-actions { gap: 8px; }
+  .dala-reference-action { flex: 1 1 auto; }
+}
+
+/* Referência visual da tela de Dalas: painel escuro e tabela operacional. */
+.dalas-reference-screen {
+  width: calc(100% + 64px);
+  min-height: calc(100vh - 76px);
+  margin: -32px;
+  padding: 36px 32px 56px;
+  background: #0f172a;
+  color: #f7f9fc;
+}
+.dalas-reference-header {
+  margin: 0 auto 40px;
+  max-width: 100%;
+}
+.dalas-reference-header h2 {
+  color: #f7f9fc;
+  font-size: 36px;
+  letter-spacing: -0.02em;
+}
+.dalas-reference-header .button.primary {
+  min-width: 192px;
+  min-height: 54px;
+  padding: 13px 28px;
+  border-radius: 15px;
+  font-size: 19px;
+}
+.dalas-reference-table-wrap {
+  max-width: 100%;
+  border: 1px solid #31435e;
+  border-radius: 22px;
+  background: #1d2a40;
+  box-shadow: none;
+}
+.dalas-reference-table th,
+.dalas-reference-table td {
+  border-bottom-color: #30415b;
+}
+.dalas-reference-table th {
+  padding: 25px 28px;
+  background: #1d2a40;
+  color: #9eafc8;
+  font-size: 16px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.dalas-reference-table td {
+  padding: 28px;
+  color: #dce5f2;
+  font-size: 17px;
+}
+.dalas-reference-table td strong {
+  color: #f7f9fc;
+  font-size: 19px;
+}
+.dalas-reference-table td code {
+  color: #dce5f2;
+  font-size: 17px;
+}
+.dalas-reference-table th:nth-child(1),
+.dalas-reference-table td:nth-child(1) { width: 10%; }
+.dalas-reference-table th:nth-child(2),
+.dalas-reference-table td:nth-child(2) { width: 16%; }
+.dalas-reference-table th:nth-child(3),
+.dalas-reference-table td:nth-child(3) { width: 15%; }
+.dalas-reference-table th:nth-child(4),
+.dalas-reference-table td:nth-child(4),
+.dalas-reference-table th:nth-child(5),
+.dalas-reference-table td:nth-child(5) { width: 9%; }
+.dalas-reference-table th:nth-child(6),
+.dalas-reference-table td:nth-child(6) { width: 21%; }
+.dalas-reference-table th:nth-child(7),
+.dalas-reference-table td:nth-child(7) { width: 20%; }
+.dala-status {
+  color: #dce5f2;
+  font-size: 16px;
+}
+.dala-status .status-dot {
+  width: 12px;
+  height: 12px;
+  margin-top: 5px;
+  background: #ff3345;
+  box-shadow: 0 0 0 5px rgba(255, 51, 69, 0.14);
+}
+.dala-reference-actions {
+  flex-wrap: nowrap;
+  gap: 10px;
+}
+.dala-reference-action {
+  min-height: 47px;
+  padding: 9px 14px;
+  border: 2px solid #f3f6fb;
+  border-radius: 12px;
+  background: transparent;
+  color: #f7f9fc;
+  font-size: 15px;
+  white-space: nowrap;
+}
+.dala-reference-action:hover,
+.dala-reference-action:focus-visible {
+  border-color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+.dala-reference-action.danger { color: #f7f9fc; }
+.empty-cell { color: #c2cfdf !important; }
+@media (max-width: 1200px) and (min-width: 761px) {
+  .dalas-reference-screen { padding-inline: 24px; }
+  .dalas-reference-table th,
+  .dalas-reference-table td { padding-inline: 16px; }
+  .dalas-reference-table td { font-size: 15px; }
+  .dalas-reference-table td code { font-size: 15px; }
+  .dala-reference-action { padding-inline: 9px; font-size: 13px; }
+}
+@media (max-width: 760px) {
+  .dalas-reference-screen {
+    width: calc(100% + 28px);
+    min-height: calc(100vh - 76px);
+    margin: -18px -14px -36px;
+    padding: 28px 14px 42px;
+  }
+  .dalas-reference-header { margin-bottom: 24px; }
+  .dalas-reference-header h2 { font-size: 30px; }
+  .dalas-reference-header .button.primary { min-height: 50px; font-size: 17px; }
+  .dalas-reference-table-wrap { border-radius: 16px; }
+  .dalas-reference-table tr { padding: 10px 16px; border-bottom-color: #30415b; }
+  .dalas-reference-table td {
+    color: #dce5f2;
+    font-size: 15px;
+  }
+  .dalas-reference-table td strong { color: #fff; font-size: 16px; }
+  .dalas-reference-table td code { color: #dce5f2; font-size: 15px; }
+  .dalas-reference-table td::before { color: #9eafc8; }
+  .dala-reference-actions { flex-wrap: wrap; }
   .dala-reference-action { flex: 1 1 auto; }
 }
