@@ -22,7 +22,7 @@ import {
     manifests,
     manifestView,
     work,
-} from "./telas/operacoes.js?v=202609140126";
+} from "./telas/operacoes.js?v=202609141620";
 import { dashboard } from "./telas/painel.js";
 import { users } from "./telas/usuarios.js";
 import { atualizarStatusDasDalas, linhaItemRomaneio } from "./controladores/operacao.js";
@@ -1350,7 +1350,12 @@ function bindForms() {
     });
   // Importação PDF: preenche o formulário manual com os campos extraídos.
   const pdfForm = document.querySelector("#pdf-form");
-  if (pdfForm)
+  if (pdfForm) {
+    const pdfFile = pdfForm.querySelector(".pdf-file-input");
+    const pdfFileName = pdfForm.querySelector("[data-file-name]");
+    pdfFile?.addEventListener("change", () => {
+      pdfFileName.textContent = pdfFile.files?.[0]?.name || "Nenhum arquivo escolhido";
+    });
     pdfForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       const buttonNode = pdfForm.querySelector("button.button");
@@ -1389,6 +1394,7 @@ function bindForms() {
         if (buttonNode) buttonNode.disabled = false;
       }
     });
+  }
   const csvForm = document.querySelector("#csv-form");
   if (csvForm)
     csvForm.addEventListener("submit", async (event) => {
