@@ -3219,15 +3219,15 @@ body.mobile-menu-open { overflow: hidden; }
   font-size: 17px;
 }
 .dalas-reference-table th:nth-child(1),
-.dalas-reference-table td:nth-child(1) { width: 10%; }
+.dalas-reference-table td:nth-child(1) { width: 9%; }
 .dalas-reference-table th:nth-child(2),
-.dalas-reference-table td:nth-child(2) { width: 16%; }
+.dalas-reference-table td:nth-child(2) { width: 15%; }
 .dalas-reference-table th:nth-child(3),
-.dalas-reference-table td:nth-child(3) { width: 15%; }
+.dalas-reference-table td:nth-child(3) { width: 14%; }
 .dalas-reference-table th:nth-child(4),
 .dalas-reference-table td:nth-child(4),
 .dalas-reference-table th:nth-child(5),
-.dalas-reference-table td:nth-child(5) { width: 9%; }
+.dalas-reference-table td:nth-child(5) { width: 8%; }
 .dalas-reference-table th:nth-child(6),
 .dalas-reference-table td:nth-child(6) { width: 21%; }
 .dalas-reference-table th:nth-child(7),
@@ -3342,19 +3342,19 @@ body.mobile-menu-open { overflow: hidden; }
 .dalas-reference-table td strong { color: #142332; font-size: 15px; }
 .dalas-reference-table td code { color: #35566b; font-size: inherit; }
 .dalas-reference-table th:nth-child(1),
-.dalas-reference-table td:nth-child(1) { width: 10%; }
+.dalas-reference-table td:nth-child(1) { width: 9%; }
 .dalas-reference-table th:nth-child(2),
-.dalas-reference-table td:nth-child(2) { width: 16%; }
+.dalas-reference-table td:nth-child(2) { width: 15%; }
 .dalas-reference-table th:nth-child(3),
-.dalas-reference-table td:nth-child(3) { width: 15%; }
+.dalas-reference-table td:nth-child(3) { width: 14%; }
 .dalas-reference-table th:nth-child(4),
 .dalas-reference-table td:nth-child(4),
 .dalas-reference-table th:nth-child(5),
-.dalas-reference-table td:nth-child(5) { width: 9%; }
+.dalas-reference-table td:nth-child(5) { width: 8%; }
 .dalas-reference-table th:nth-child(6),
-.dalas-reference-table td:nth-child(6) { width: 21%; }
+.dalas-reference-table td:nth-child(6) { width: 18%; }
 .dalas-reference-table th:nth-child(7),
-.dalas-reference-table td:nth-child(7) { width: 20%; }
+.dalas-reference-table td:nth-child(7) { width: 28%; }
 .dala-status { color: #69808f; font-size: 12px; }
 .dala-status .status-dot {
   width: 9px;
@@ -3363,15 +3363,23 @@ body.mobile-menu-open { overflow: hidden; }
   background: #b8c2cc;
   box-shadow: none;
 }
+.dala-status .status-dot.online {
+  background: var(--green);
+  box-shadow: 0 0 0 3px rgba(35, 131, 79, 0.15);
+}
+.dala-status .status-dot.offline {
+  background: var(--red);
+  box-shadow: 0 0 0 3px rgba(184, 50, 66, 0.13);
+}
 .dala-reference-actions { flex-wrap: nowrap; gap: 7px; }
 .dala-reference-action {
   min-height: 36px;
-  padding: 7px 11px;
+  padding: 7px 9px;
   border: 1px solid #b6c7d1;
   border-radius: 8px;
   background: #fff;
   color: #245c79;
-  font-size: 12px;
+  font-size: 11px;
   white-space: nowrap;
 }
 .dala-reference-action:hover,
