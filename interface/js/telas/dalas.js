@@ -56,7 +56,6 @@ export function dalaView(store) {
   <div class="metric"><small>Progresso</small><strong>${percentage}%</strong></div>
   </div><p class="muted">Último sinal: ${esc(operation.last_seen_at || "Sem sinal registrado")}</p></section><br>
 <section class="panel"><p id="dala-view-status" class="dala-status-line" data-equipment-id="${dala.id}"><span class="status-dot"></span>Verificando comunicação com o serviço Modbus…</p></section><br>
-<section class="panel"><div class="panel-heading"><div><h3>Diagnóstico do CLP</h3><p class="muted">Comandos enviados, status do gateway e retorno registrado.</p></div><button class="button secondary" data-action="reload-dala-diagnostics" data-id="${dala.id}" type="button">Atualizar</button></div><div class="table-wrap"><table><thead><tr><th>ID</th><th>Comando</th><th>Status</th><th>Solicitado em</th><th>Resposta</th></tr></thead><tbody>${commandRows}</tbody></table></div></section><br>
 <div class="grid two detail-cards">
 <div class="panel detail-card"><small>Nome da Dala</small><strong>${esc(dala.name)}</strong></div>
 <div class="panel detail-card"><small>Identificador da Dala</small><strong><code>${esc(dala.equipment_code)}</code></strong></div>
@@ -66,7 +65,8 @@ export function dalaView(store) {
 <div class="panel detail-card"><small>ID</small><strong>${dala.id}</strong></div>
 <div class="panel detail-card"><small>Criada em</small><strong>${formatDate(dala.created_at)}</strong></div>
 <div class="panel detail-card"><small>Atualizada em</small><strong>${formatDate(dala.updated_at)}</strong></div>
-  </div>`;
+  </div><br>
+<section class="panel"><div class="panel-heading"><div><h3>Diagnóstico do CLP</h3><p class="muted">Comandos enviados, status do gateway e retorno registrado.</p></div><button class="button secondary" data-action="reload-dala-diagnostics" data-id="${dala.id}" type="button">Atualizar</button></div><div class="table-wrap"><table><thead><tr><th>ID</th><th>Comando</th><th>Status</th><th>Solicitado em</th><th>Resposta</th></tr></thead><tbody>${commandRows}</tbody></table></div></section>`;
 }
 
 export function dalaActions(store) {
