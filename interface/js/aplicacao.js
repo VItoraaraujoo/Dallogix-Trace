@@ -1,7 +1,7 @@
-import { ArmazenamentoTrace } from "./classes/ArmazenamentoTrace.js";
-import { FORM_ACTIONS } from "./constantes/acoes.js";
+import { ArmazenamentoTrace } from "./classes/ArmazenamentoTrace.js?v=202609140210";
+import { FORM_ACTIONS } from "./constantes/acoes.js?v=202609140210";
 import { el, esc } from "./funcoes/html.js";
-import { settings } from "./telas/configuracoes.js?v=20260914revert1";
+import { settings } from "./telas/configuracoes.js?v=202609140210";
 import { dalaActions, dalaEdit, dalas, dalaView } from "./telas/dalas.js?v=20260914revert1";
 import { company } from "./telas/empresa.js";
 import { companies } from "./telas/empresas.js";
@@ -477,21 +477,6 @@ function bindActions() {
           "users",
           node.dataset.companyId ? `?company_id=${node.dataset.companyId}` : "",
         );
-        return;
-      }
-      if (action === "clear-integration-token") {
-        store.state.newIntegrationToken = null;
-        render();
-        return;
-      }
-      if (action === "revoke-integration") {
-        if (!confirm(`Revogar a integração "${node.dataset.label}"? O outro sistema perderá o acesso imediatamente.`)) return;
-        try {
-          await store.revokeIntegration(node.dataset.id);
-          render();
-        } catch (error) {
-          alert(error.message);
-        }
         return;
       }
       if (action === "toggle-user") {
@@ -1146,23 +1131,6 @@ function bindForms() {
         alert(error.message);
       }
     });
-  const integrationForm = document.querySelector("#integration-form");
-  if (integrationForm)
-    integrationForm.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      const raw = new FormData(integrationForm);
-      const scopes = raw.getAll("scopes");
-      try {
-        await store.createIntegration({
-          label: raw.get("label"),
-          expires_at: raw.get("expires_at"),
-          scopes,
-        });
-        render();
-      } catch (error) {
-        alert(error.message);
-      }
-    });
   const productForm = document.querySelector("#product-form");
   if (productForm)
     productForm.addEventListener("submit", async (event) => {
@@ -1539,7 +1507,7 @@ async function loadPageData(page) {
         new URLSearchParams(window.location.search).get("company_id") || null;
       if (store.state.selectedCompanyId) await store.loadUsers();
     }
-    if (page === "settings") await Promise.all([store.loadConfiguration(), store.loadIntegrations()]);
+    if (page === "settings") await store.loadConfiguration();
     return;
   }
   const tasks = {
@@ -1573,7 +1541,7 @@ async function loadPageData(page) {
       store.loadSyncStatus(),
     ],
     emergency: () => [store.loadActiveLoading(), store.loadMonitoring()],
-    settings: () => [store.loadConfiguration(), store.loadIntegrations(), store.loadEquipments(), store.loadSyncStatus()],
+    settings: () => [store.loadConfiguration(), store.loadEquipments(), store.loadSyncStatus()],
     dalas: () => [store.loadEquipments()],
     dala: () => [loadDalaView(queryId())],
     "dala-edit": () => [store.loadEquipment(queryId())],

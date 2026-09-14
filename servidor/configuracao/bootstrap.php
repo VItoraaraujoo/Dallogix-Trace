@@ -169,57 +169,6 @@ function require_internal_token(string $environmentKey, string $developmentDefau
     exigir_token_interno($environmentKey, $developmentDefault);
 }
 
-/**
- * Autentica integrações servidor-a-servidor. A chave nunca é armazenada em
- * texto puro: somente seu prefixo e hash SHA-256 ficam no banco.
- *
- * @param list<string> $scopesRequired
- * @return array{key_id:int,company_id:int,label:string,scopes:list<string>}
- */
-function exigir_chave_integracao(array $scopesRequired = []): array
-{
-    $authorization = trim((string) ($_SERVER["HTTP_AUTHORIZATION"] ?? ""));
-    if (!preg_match('/^Bearer\\s+(trc_[A-Za-z0-9_-]{32,})$/', $authorization, $matches)) {
-        responder_json(["error" => "Credencial de integração ausente ou inválida."], 401);
-    }
-
-    $token = $matches[1];
-    $prefix = substr($token, 0, 16);
-    $statement = obter_conexao_banco()->prepare(
-        "SELECT id, company_id, label, secret_hash, scopes
-         FROM chaves_integracao
-         WHERE key_prefix = :prefix AND active = 1
-           AND (expires_at IS NULL OR expires_at > NOW())
-         LIMIT 1",
-    );
-    $statement->execute(["prefix" => $prefix]);
-    $key = $statement->fetch();
-    if (!$key || !hash_equals((string) $key["secret_hash"], hash("sha256", $token))) {
-        responder_json(["error" => "Credencial de integração inválida."], 401);
-    }
-
-    $scopes = json_decode((string) $key["scopes"], true);
-    if (!is_array($scopes) || array_diff($scopesRequired, $scopes) !== []) {
-        responder_json(["error" => "Esta integração não possui permissão para esta operação."], 403);
-    }
-
-    obter_conexao_banco()->prepare(
-        "UPDATE chaves_integracao SET last_used_at = NOW() WHERE id = :id",
-    )->execute(["id" => $key["id"]]);
-
-    return [
-        "key_id" => (int) $key["id"],
-        "company_id" => (int) $key["company_id"],
-        "label" => (string) $key["label"],
-        "scopes" => array_values(array_filter($scopes, "is_string")),
-    ];
-}
-
-function require_integration_key(array $scopesRequired = []): array
-{
-    return exigir_chave_integracao($scopesRequired);
-}
-
 function validar_licenca_ativa(PDO $pdo, int $companyId): array
 {
     $statement = $pdo->prepare(

@@ -24,8 +24,6 @@ export class ArmazenamentoTrace {
       users: [],
       userRole: null,
       configuration: null,
-      integrations: [],
-      newIntegrationToken: null,
       equipments: [],
       companies: [],
       companyDetail: null,
@@ -553,36 +551,6 @@ export class ArmazenamentoTrace {
   async loadConfiguration() {
     const response = await fetch("/api/configuracoes.php");
     if (response.ok) this.state.configuration = (await response.json()).data;
-  }
-  async loadIntegrations() {
-    const response = await fetch("/api/integracoes.php");
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok)
-      throw new Error(result.error || "Não foi possível carregar as integrações.");
-    this.state.integrations = result.data || [];
-  }
-  async createIntegration(payload) {
-    const response = await fetch("/api/integracoes.php", {
-      method: "POST",
-      headers: this.jsonHeaders(),
-      body: JSON.stringify(payload),
-    });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok)
-      throw new Error(result.error || "Não foi possível criar a integração.");
-    this.state.newIntegrationToken = result.data.token;
-    await this.loadIntegrations();
-    return result.data;
-  }
-  async revokeIntegration(id) {
-    const response = await fetch(`/api/integracoes.php?id=${encodeURIComponent(id)}`, {
-      method: "DELETE",
-      headers: this.jsonHeaders(),
-    });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok)
-      throw new Error(result.error || "Não foi possível revogar a integração.");
-    await this.loadIntegrations();
   }
   async loadEquipments() {
     const response = await fetch("/api/equipamentos.php");

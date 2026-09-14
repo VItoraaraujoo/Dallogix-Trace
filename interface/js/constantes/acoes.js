@@ -1,7 +1,6 @@
 export const FORM_ACTIONS = new Set([
   "save-network",
   "save-pdf-settings",
-  "create-integration",
   "submit-dala",
   "save-dala-edit",
   "submit-product",

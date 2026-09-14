@@ -38,18 +38,8 @@ export function settings(store) {
   const canManageUsers = ["ADMIN_DALLOGIX", "ADMIN_EMPRESA"].includes(
     store.state.userRole,
   );
-  const integrations = store.state.integrations || [];
-  const integrationRows = integrations.length
-    ? integrations
-        .map((integration) => `<tr><td>${esc(integration.label)}</td><td><code>${esc(integration.key_prefix)}…</code></td><td>${esc((integration.scopes || []).join(", "))}</td><td>${integration.active ? "Ativa" : "Revogada"}</td><td>${esc(integration.last_used_at || "Nunca")}</td><td>${integration.active ? `<button class="button danger" data-action="revoke-integration" data-id="${esc(integration.id)}" data-label="${esc(integration.label)}" type="button">Revogar</button>` : "—"}</td></tr>`)
-        .join("")
-    : '<tr><td colspan="6" class="empty-cell">Nenhuma integração cadastrada.</td></tr>';
   return `<div class="title-row"><div><h2>Configurações</h2></div></div>
 ${canManageUsers ? `<section class="panel settings-access-panel"><div class="panel-heading"><div><h3>Gerenciar usuários</h3><p>Crie e gerencie os usuários, perfis e acessos da empresa.</p></div>${button("Abrir gerenciamento de usuários", "open-users", "primary")}</div></section><br>` : ""}
-${canManageUsers ? `<section class="panel"><div class="panel-heading"><div><h3>Integrações com outros sistemas</h3><p>Crie uma chave exclusiva para o ERP, TMS ou sistema do cliente. Ela fica vinculada somente a esta empresa.</p></div></div>
-${store.state.newIntegrationToken ? `<div class="notice success"><strong>Copie a chave agora.</strong><p>Ela não será mostrada novamente.</p><code class="integration-token">${esc(store.state.newIntegrationToken)}</code><div class="actions">${button("Já copiei", "clear-integration-token", "secondary")}</div></div>` : ""}
-<form id="integration-form"><div class="grid two"><label>Nome da integração<input name="label" required maxlength="120" placeholder="ERP do cliente" /></label><label>Validade (opcional)<input name="expires_at" type="date" /></label></div><fieldset><legend>Permissões</legend><label><input type="checkbox" name="scopes" value="produtos:read" checked /> Consultar produtos</label><label><input type="checkbox" name="scopes" value="romaneios:read" /> Consultar romaneios</label><label><input type="checkbox" name="scopes" value="romaneios:write" /> Criar romaneios</label></fieldset><div class="actions">${button("Criar chave de integração", "create-integration", "primary")}</div></form>
-<div class="table-wrap"><table><thead><tr><th>Integração</th><th>Chave</th><th>Permissões</th><th>Status</th><th>Último uso</th><th>Ação</th></tr></thead><tbody>${integrationRows}</tbody></table></div><p><small>Documentação: <code>/documentacao/integracoes/api-v1.md</code>. Nunca envie esta chave por e-mail ou mensagem.</small></p></section><br>` : ""}
 <section class="panel"><h3>Rede do cliente</h3>
 <p>Configure o IP público do gateway do cliente. O Trace usará esse endereço com a porta externa de cada Dala para alcançar o serviço dala-modbus na fábrica.</p>
 <form id="network-form"><label>IP público do gateway<input name="gateway_public_ip" value="${esc(saved.gateway_public_ip || "")}" placeholder="170.80.219.146" /><small>IP fixo ou DDNS do modem/roteador do cliente.</small></label>
