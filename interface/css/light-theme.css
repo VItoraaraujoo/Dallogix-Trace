@@ -3184,9 +3184,9 @@ body.mobile-menu-open { overflow: hidden; }
 .dalas-reference-table td strong { font-size: 18px; }
 .dalas-reference-table td code { font-size: 16px; }
 .dalas-reference-table th:nth-child(1),
-.dalas-reference-table td:nth-child(1) { width: 13%; }
+.dalas-reference-table td:nth-child(1) { width: 17%; }
 .dalas-reference-table th:nth-child(2),
-.dalas-reference-table td:nth-child(2) { width: 15%; }
+.dalas-reference-table td:nth-child(2) { width: 13%; }
 .dalas-reference-table th:nth-child(3),
 .dalas-reference-table td:nth-child(3) { width: 14%; }
 .dalas-reference-table th:nth-child(4),
@@ -3196,7 +3196,11 @@ body.mobile-menu-open { overflow: hidden; }
 .dalas-reference-table th:nth-child(6),
 .dalas-reference-table td:nth-child(6) { width: 18%; }
 .dalas-reference-table th:nth-child(7),
-.dalas-reference-table td:nth-child(7) { width: 22%; }
+.dalas-reference-table td:nth-child(7) { width: 20%; }
+.dalas-reference-table td:first-child strong {
+  display: block;
+  overflow-wrap: anywhere;
+}
 .dala-status { font-size: 14px; }
 .dala-reference-actions { gap: 9px; }
 .dala-reference-action {
