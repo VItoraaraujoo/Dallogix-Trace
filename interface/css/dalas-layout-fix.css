@@ -11,6 +11,10 @@
 
 @media (min-width: 761px) {
 
+    .dalas-reference-table th {
+        text-align: center;
+    }
+
     .dalas-reference-table th:nth-child(1),
     .dalas-reference-table td:nth-child(1) {
         width: 14%;
