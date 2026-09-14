@@ -1,0 +1,50 @@
+.dalas-reference-table td {
+    line-height: 1.35;
+}
+
+@media (min-width: 761px) {
+
+    .dalas-reference-table th:nth-child(1),
+    .dalas-reference-table td:nth-child(1) {
+        width: 11%;
+    }
+
+    .dalas-reference-table th:nth-child(2),
+    .dalas-reference-table td:nth-child(2) {
+        width: 11%;
+    }
+
+    .dalas-reference-table th:nth-child(3),
+    .dalas-reference-table td:nth-child(3) {
+        width: 11%;
+        white-space: nowrap;
+    }
+
+    .dalas-reference-table th:nth-child(4),
+    .dalas-reference-table td:nth-child(4),
+    .dalas-reference-table th:nth-child(5),
+    .dalas-reference-table td:nth-child(5) {
+        width: 9.5%;
+        white-space: nowrap;
+    }
+
+    .dalas-reference-table th:nth-child(6),
+    .dalas-reference-table td:nth-child(6) {
+        width: 23%;
+    }
+
+    .dalas-reference-table th:nth-child(7),
+    .dalas-reference-table td:nth-child(7) {
+        width: 25%;
+    }
+
+    .dala-reference-actions {
+        flex-wrap: nowrap;
+        gap: 6px;
+    }
+
+    .dala-reference-action {
+        padding-inline: 8px;
+        font-size: 11px;
+    }
+}
