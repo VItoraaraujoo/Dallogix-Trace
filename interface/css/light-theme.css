@@ -5200,6 +5200,113 @@ body.mobile-menu-open {
   }
 }
 
+/* Visualização da Dala: cadastro, operação e diagnóstico em blocos contínuos. */
+.dala-page-kicker {
+  display: block;
+  margin-bottom: 6px;
+  color: #6b8292;
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.dala-page-header {
+  align-items: flex-start;
+}
+.dala-page-header h2 {
+  margin: 0 0 6px;
+}
+.dala-page-header p { margin: 0; }
+.dala-overview-panel,
+.dala-stats-panel,
+.dala-diagnostics-panel {
+  padding: 26px;
+  border-radius: 14px;
+}
+.dala-overview-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e2ebef;
+}
+.dala-overview-heading h3,
+.dala-stats-panel h3,
+.dala-diagnostics-panel h3 {
+  margin: 0;
+}
+.dala-status-line {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  max-width: 360px;
+  margin: 0;
+  color: #5f7483;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.35;
+  text-align: right;
+}
+.dala-status-line .status-dot { flex: 0 0 auto; margin: 0; }
+.dala-info-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 22px 28px;
+  padding-top: 24px;
+}
+.dala-info-item {
+  min-width: 0;
+}
+.dala-info-item small {
+  display: block;
+  margin-bottom: 8px;
+  color: #6b8292;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.dala-info-item strong {
+  display: block;
+  overflow-wrap: anywhere;
+  color: #142332;
+  font-size: 16px;
+  line-height: 1.3;
+}
+.dala-info-item code { color: #35566b; font-size: 15px; }
+.dala-stats-panel { margin-top: 18px; }
+.dala-stats-panel .panel-heading { align-items: flex-end; }
+.dala-last-signal {
+  color: #6b8292;
+  font-size: 13px;
+}
+.dala-stats-grid {
+  margin-top: 24px;
+  padding-top: 22px;
+  border-top: 1px solid #e2ebef;
+}
+.dala-diagnostics-panel { margin-top: 18px; }
+.dala-diagnostics-panel .panel-heading { margin-bottom: 18px; }
+.dala-diagnostics-panel .table-wrap { margin: 0; }
+@media (max-width: 1000px) and (min-width: 761px) {
+  .dala-info-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .dala-page-header { align-items: stretch; }
+  .dala-page-header .actions { width: 100%; }
+  .dala-page-header .actions .button { width: 100%; }
+  .dala-overview-panel,
+  .dala-stats-panel,
+  .dala-diagnostics-panel { padding: 20px 16px; }
+  .dala-overview-heading { flex-direction: column; gap: 16px; }
+  .dala-status-line { max-width: none; text-align: left; }
+  .dala-info-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 16px; }
+  .dala-stats-panel .panel-heading { align-items: flex-start; flex-direction: column; gap: 10px; }
+  .dala-last-signal { font-size: 12px; }
+  .dala-stats-grid { gap: 18px; }
+}
+
 /* Referência visual da tela de Dalas: painel escuro e tabela operacional. */
 .dalas-reference-screen {
   width: calc(100% + 64px);
