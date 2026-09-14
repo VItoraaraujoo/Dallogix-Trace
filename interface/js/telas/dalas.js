@@ -27,12 +27,16 @@ export function dalas(store) {
 <label>Porta externa no gateway<input name="external_port" type="number" min="1" max="65535" /><small>Porta TCP pública do gateway que encaminha a comunicação para esta Dala.</small></label>
 </div><div class="actions">${button("Cadastrar Dala", "submit-dala")}</div></form></section></div>`;
   }
-  return `<section class="dalas-catalog"><div class="title-row with-actions"><div><h2>Dalas</h2><p>Equipamentos e configurações de conexão.</p></div>${canManage ? button("Nova Dala", "toggle-dala-form") : ""}</div>
-<div class="dalas-register-list">${rows.length ? rows.map((equipment) => `<article class="dala-register">
-<header class="dala-register-heading"><div><h3>${esc(equipment.name)}</h3><p>Identificador <code>${esc(equipment.equipment_code)}</code></p></div><div class="dala-register-status"><span class="dala-field-label">Comunicação</span>${dalaStatusCell(equipment)}</div></header>
-<dl class="dala-register-connection"><div><dt>IP do CLP</dt><dd>${esc(equipment.plc_ip || "Não configurado")}</dd></div><div><dt>Porta do CLP</dt><dd>${esc(equipment.plc_port || "—")}</dd></div><div><dt>Porta externa</dt><dd>${esc(equipment.external_port || "—")}</dd></div></dl>
-<footer class="dala-register-actions"><button class="text-link" data-action="view-dala" data-id="${equipment.id}" type="button">Visualizar</button>${canManage ? `<button class="text-link" data-action="edit-dala" data-id="${equipment.id}" type="button">Editar</button><button class="text-link" data-action="dala-actions" data-id="${equipment.id}" type="button">Ações</button>` : ""}${canDelete ? `<button class="text-link danger-link" data-action="delete-dala" data-id="${equipment.id}" data-name="${esc(equipment.name)}" type="button">Excluir</button>` : ""}</footer>
-</article>`).join("") : '<div class="panel empty-cell">Nenhuma Dala cadastrada.</div>'}</div></section>`;
+  return `<section class="dalas-catalog dalas-reference-screen"><div class="dalas-reference-header"><h2>Dalas</h2>${canManage ? button("Nova Dala", "toggle-dala-form", "primary") : ""}</div>
+<div class="dalas-reference-table-wrap"><table class="dalas-reference-table"><thead><tr><th>Nome</th><th>Identificador</th><th>IP do CLP</th><th>Porta do CLP</th><th>Porta<br>Externa</th><th>Status</th><th>Ações</th></tr></thead><tbody>${rows.length ? rows.map((equipment) => `<tr>
+<td data-label="Nome"><strong>${esc(equipment.name)}</strong></td>
+<td data-label="Identificador"><code>${esc(equipment.equipment_code)}</code></td>
+<td data-label="IP do CLP">${esc(equipment.plc_ip || "—")}</td>
+<td data-label="Porta do CLP">${esc(equipment.plc_port || "—")}</td>
+<td data-label="Porta Externa">${esc(equipment.external_port || "—")}</td>
+<td data-label="Status">${dalaStatusCell(equipment)}</td>
+<td data-label="Ações"><div class="dala-reference-actions"><button class="dala-reference-action" data-action="view-dala" data-id="${equipment.id}" type="button">Visualizar</button>${canManage ? `<button class="dala-reference-action" data-action="edit-dala" data-id="${equipment.id}" type="button">Editar</button><button class="dala-reference-action" data-action="dala-actions" data-id="${equipment.id}" type="button">Ações</button>` : ""}${canDelete ? `<button class="dala-reference-action danger" data-action="delete-dala" data-id="${equipment.id}" data-name="${esc(equipment.name)}" type="button">Excluir</button>` : ""}</div></td>
+</tr>`).join("") : '<tr><td colspan="7" class="empty-cell">Nenhuma Dala cadastrada.</td></tr>'}</tbody></table></div></section>`;
 }
 
 // Tela Visualizar Dala: cartões com dados cadastrais e status de comunicação.
