@@ -88,7 +88,7 @@ export function importScreen(store) {
   const today = industrialPcDate();
   return `<div class="title-row has-back"><button class="button secondary page-back" data-action="goto-manifests" type="button">← Voltar</button><div><h2>Novo romaneio</h2></div></div>
 <section class="panel pdf-import-card"><p>Selecione o arquivo PDF do romaneio para preencher os campos automaticamente. Confira os dados e salve.</p>
-<form id="pdf-form"><div class="pdf-file-picker"><input id="pdf-file" class="pdf-file-input" name="file" type="file" accept=".pdf,application/pdf" required /><label class="button primary pdf-file-button" for="pdf-file">Escolher arquivo</label><span class="pdf-file-name" data-file-name>Nenhum arquivo escolhido</span></div><div class="actions"><button class="button primary" data-action="import-pdf" type="submit">Importar PDF</button></div></form></section><br>
+<form id="pdf-form"><div class="file-picker"><input id="pdf-file" class="file-input" name="file" type="file" accept=".pdf,application/pdf" required /><label class="button primary file-picker-button" for="pdf-file">Escolher arquivo</label><span class="file-name" data-file-name>Nenhum arquivo escolhido</span></div><div class="actions"><button class="button primary" data-action="import-pdf" type="submit">Importar PDF</button></div></form></section><br>
 <div class="divider"><span>ou cadastre manualmente</span></div>
 <p>Preencha os dados do romaneio e adicione os itens com produto e quantidade.</p>
 <form id="new-manifest-form">
@@ -103,7 +103,7 @@ export function importScreen(store) {
 <div class="table-wrap"><table id="manifest-items"><thead><tr><th>Produto</th><th>Quantidade</th><th></th></tr></thead><tbody>${itemRow(products)}</tbody></table></div>
 </section><br>${button("Cadastrar", "submit-manifest")}
 </form>
-<details class="panel csv-legacy"><summary>Importar romaneios por CSV</summary><p>Use o modelo separado por ponto e vírgula. Campos obrigatórios: <b>romaneio, data, placa, produto e quantidade</b>. Motorista e expedidor são opcionais. A data pode ser <b>DD/MM/AAAA</b> ou <b>AAAA-MM-DD</b>.</p><p><a class="text-link" href="assets/modelo-romaneio.csv" download>Baixar modelo CSV</a></p><form id="csv-form"><input name="file" type="file" accept=".csv,text/csv" required /><small>Máximo: 5 MB ou 10.000 linhas. Linhas repetidas do mesmo produto são somadas automaticamente.</small><div class="actions">${button("Importar e validar", "import-csv")}</div></form></details>`;
+<details class="panel csv-legacy"><summary>Importar romaneios por CSV</summary><p>Use o modelo separado por ponto e vírgula. Campos obrigatórios: <b>romaneio, data, placa, produto e quantidade</b>. Motorista e expedidor são opcionais. A data pode ser <b>DD/MM/AAAA</b> ou <b>AAAA-MM-DD</b>.</p><p><a class="text-link" href="assets/modelo-romaneio.csv" download>Baixar modelo CSV</a></p><form id="csv-form"><div class="file-picker"><input id="csv-file" class="file-input" name="file" type="file" accept=".csv,text/csv" required /><label class="button primary file-picker-button" for="csv-file">Escolher arquivo</label><span class="file-name" data-file-name>Nenhum arquivo escolhido</span></div><small>Máximo: 5 MB ou 10.000 linhas. Linhas repetidas do mesmo produto são somadas automaticamente.</small><div class="actions">${button("Importar e validar", "import-csv")}</div></form></details>`;
 }
 
 export function manifestEdit(store) {

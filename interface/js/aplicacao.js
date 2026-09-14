@@ -22,7 +22,7 @@ import {
     manifests,
     manifestView,
     work,
-} from "./telas/operacoes.js?v=202609141620";
+} from "./telas/operacoes.js?v=202609141635";
 import { dashboard } from "./telas/painel.js";
 import { users } from "./telas/usuarios.js";
 import { atualizarStatusDasDalas, linhaItemRomaneio } from "./controladores/operacao.js";
@@ -1351,7 +1351,7 @@ function bindForms() {
   // Importação PDF: preenche o formulário manual com os campos extraídos.
   const pdfForm = document.querySelector("#pdf-form");
   if (pdfForm) {
-    const pdfFile = pdfForm.querySelector(".pdf-file-input");
+    const pdfFile = pdfForm.querySelector(".file-input");
     const pdfFileName = pdfForm.querySelector("[data-file-name]");
     pdfFile?.addEventListener("change", () => {
       pdfFileName.textContent = pdfFile.files?.[0]?.name || "Nenhum arquivo escolhido";
@@ -1396,7 +1396,12 @@ function bindForms() {
     });
   }
   const csvForm = document.querySelector("#csv-form");
-  if (csvForm)
+  if (csvForm) {
+    const csvFile = csvForm.querySelector(".file-input");
+    const csvFileName = csvForm.querySelector("[data-file-name]");
+    csvFile?.addEventListener("change", () => {
+      csvFileName.textContent = csvFile.files?.[0]?.name || "Nenhum arquivo escolhido";
+    });
     csvForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       const response = await fetch("/api/importar_csv.php", {
@@ -1415,6 +1420,7 @@ function bindForms() {
       );
       navigate("manifests");
     });
+  }
   const prepareLoadingForm = document.querySelector("#prepare-loading-form");
   if (prepareLoadingForm)
     prepareLoadingForm.addEventListener("submit", async (event) => {
