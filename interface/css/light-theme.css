@@ -2905,35 +2905,3 @@ p { line-height: 1.5; }
   .pdf-import-card .actions { justify-content: stretch; }
   .pdf-import-card .actions .button { width: 100%; }
 }
-
-/* A lista de Dalas se adapta à largura, sem exigir rolagem lateral. */
-.dalas-list-panel,
-.dalas-list-panel .table-wrap { min-width: 0; overflow: visible; }
-.dalas-list-panel table { width: 100%; min-width: 0; table-layout: fixed; }
-.dalas-list-panel th,
-.dalas-list-panel td,
-.dalas-list-panel td:last-child {
-  min-width: 0;
-  white-space: normal;
-  overflow-wrap: anywhere;
-  padding: 12px 10px;
-}
-.dalas-list-panel .table-actions { min-width: 0; gap: 4px; }
-@media (max-width: 1000px) {
-  .dalas-list-panel thead { display: none; }
-  .dalas-list-panel tbody,
-  .dalas-list-panel tr,
-  .dalas-list-panel td { display: block; width: auto; }
-  .dalas-list-panel tr + tr { border-top: 2px solid var(--line); }
-  .dalas-list-panel td[data-label] {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
-    gap: 12px;
-  }
-  .dalas-list-panel td[data-label]::before {
-    content: attr(data-label);
-    font-weight: 700;
-    color: var(--muted);
-  }
-  .dalas-list-panel td > * { min-width: 0; }
-}
