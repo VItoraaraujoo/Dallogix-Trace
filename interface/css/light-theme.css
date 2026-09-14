@@ -3222,6 +3222,26 @@ body.mobile-menu-open { overflow: hidden; }
   .dala-reference-action { font-size: 13px; }
 }
 
+/* A tabela usa melhor a largura disponível em telas grandes. */
+@media (min-width: 1201px) {
+  .dalas-reference-table-wrap {
+    width: calc(100% + 160px);
+    margin-left: -80px;
+  }
+}
+@media (min-width: 761px) and (max-width: 1200px) {
+  .dalas-reference-table-wrap {
+    width: calc(100% + 48px);
+    margin-left: -24px;
+  }
+}
+@media (max-width: 760px) {
+  .dalas-reference-table-wrap {
+    width: 100%;
+    margin-left: 0;
+  }
+}
+
 /* Referência visual da tela de Dalas: painel escuro e tabela operacional. */
 .dalas-reference-screen {
   width: calc(100% + 64px);
