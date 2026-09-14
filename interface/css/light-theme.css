@@ -3371,7 +3371,7 @@ body.mobile-menu-open { overflow: hidden; }
   background: var(--red);
   box-shadow: 0 0 0 3px rgba(184, 50, 66, 0.13);
 }
-.dala-reference-actions { flex-wrap: nowrap; gap: 7px; }
+.dala-reference-actions { flex-wrap: wrap; gap: 7px; }
 .dala-reference-action {
   min-height: 36px;
   padding: 7px 9px;
