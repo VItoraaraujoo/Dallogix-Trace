@@ -24,6 +24,10 @@ Source: "..\..\banco-de-dados\*"; DestDir: "{app}\banco-de-dados"; Flags: recurs
 Source: "..\..\scripts\*"; DestDir: "{app}\scripts"; Flags: recursesubdirs ignoreversion
 Source: "..\..\.env.example"; DestDir: "{app}"; DestName: ".env.example"; Flags: ignoreversion
 Source: "TraceLauncher.ps1"; DestDir: "{app}\implantacao\windows"; Flags: ignoreversion
+Source: "TraceUpdater.ps1"; DestDir: "{app}\implantacao\windows"; Flags: ignoreversion
+Source: "TraceAgent.ps1"; DestDir: "{app}\implantacao\windows"; Flags: ignoreversion
+Source: "Build-TraceSetup.ps1"; DestDir: "{app}\implantacao\windows"; Flags: ignoreversion
+Source: "..\..\desktop\DallogixTrace\bin\Release\net8.0-windows\win-x64\publish\*"; DestDir: "{app}"; Flags: recursesubdirs ignoreversion
 Source: "TraceLauncher.cmd"; DestDir: "{app}\implantacao\windows"; Flags: ignoreversion
 Source: "Install-TraceMachine.ps1"; DestDir: "{app}\implantacao\windows"; Flags: ignoreversion
 Source: "Setup-TraceMachine.ps1"; DestDir: "{app}\implantacao\windows"; Flags: ignoreversion
