@@ -252,8 +252,36 @@ function renderLogin(message = "") {
 }
 function hydrateChrome() {
   const shell = document.getElementById("shell");
-  if (shell && sidebarCollapsed()) shell.classList.add("sidebar-collapsed");
+  const menuToggle = document.querySelector('[data-action="toggle-menu"]');
   const nav = document.querySelector(".sidebar nav");
+  if (nav) nav.id = "trace-sidebar-nav";
+  if (menuToggle) {
+    menuToggle.setAttribute("aria-controls", "trace-sidebar-nav");
+    const mobileOpen = shell?.classList.contains("mobile-menu-open") || false;
+    menuToggle.setAttribute("aria-expanded", String(mobileOpen));
+    menuToggle.setAttribute("title", mobileOpen ? "Fechar menu" : "Abrir menu");
+    if (menuToggle.dataset.menuBound !== "1") {
+      menuToggle.dataset.menuBound = "1";
+      menuToggle.dataset.actionBound = "1";
+      menuToggle.addEventListener("click", () => {
+        const currentShell = document.querySelector(".shell");
+        if (window.matchMedia("(max-width: 760px)").matches) {
+          const open = currentShell?.classList.toggle("mobile-menu-open") || false;
+          document.body.classList.toggle("mobile-menu-open", open);
+          menuToggle.setAttribute("aria-expanded", String(open));
+          menuToggle.setAttribute("title", open ? "Fechar menu" : "Abrir menu");
+          return;
+        }
+        const collapsed = currentShell?.classList.toggle("sidebar-collapsed") || false;
+        try {
+          localStorage.setItem("trace-sidebar-collapsed", collapsed ? "1" : "0");
+        } catch (storageError) {
+          /* modo privado */
+        }
+      });
+    }
+  }
+  if (shell && sidebarCollapsed()) shell.classList.add("sidebar-collapsed");
   if (nav)
     nav.innerHTML = NAV_GROUPS.map(([group, items]) => {
       const permitted = items.filter(([page]) => isAllowedPage(page));
@@ -379,6 +407,19 @@ function timedCommandConfirmation({
   });
 }
 function bindActions() {
+  if (!document.body.dataset.shellInteractionsBound) {
+    document.body.dataset.shellInteractionsBound = "1";
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape") return;
+      const shell = document.querySelector(".shell");
+      const toggle = document.querySelector('[data-action="toggle-menu"]');
+      if (!shell?.classList.contains("mobile-menu-open")) return;
+      shell.classList.remove("mobile-menu-open");
+      document.body.classList.remove("mobile-menu-open");
+      toggle?.setAttribute("aria-expanded", "false");
+      toggle?.setAttribute("title", "Abrir menu");
+    });
+  }
   document.querySelectorAll("[data-action]").forEach((node) => {
     if (node.dataset.actionBound === "1") return;
     node.dataset.actionBound = "1";
@@ -408,7 +449,9 @@ function bindActions() {
         const shell = document.querySelector(".shell");
         if (window.matchMedia("(max-width: 760px)").matches) {
           const open = shell?.classList.toggle("mobile-menu-open") || false;
+          document.body.classList.toggle("mobile-menu-open", open);
           node.setAttribute("aria-expanded", String(open));
+          node.setAttribute("title", open ? "Fechar menu" : "Abrir menu");
           return;
         }
         const collapsed = shell
@@ -1009,7 +1052,9 @@ function bindActions() {
       event.preventDefault();
       if (window.matchMedia("(max-width: 760px)").matches) {
         document.querySelector(".shell")?.classList.remove("mobile-menu-open");
+        document.body.classList.remove("mobile-menu-open");
         document.querySelector('[data-action="toggle-menu"]')?.setAttribute("aria-expanded", "false");
+        document.querySelector('[data-action="toggle-menu"]')?.setAttribute("title", "Abrir menu");
       }
       navigate(item.dataset.page);
     });

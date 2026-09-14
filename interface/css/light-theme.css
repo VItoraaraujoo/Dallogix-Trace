@@ -2906,6 +2906,20 @@ p { line-height: 1.5; }
   .pdf-import-card .actions .button { width: 100%; }
 }
 
+/* Base responsiva: mantém o conteúdo dentro da viewport e o foco visível. */
+html,
+body,
+.shell,
+.main,
+.content { min-width: 0; }
+html,
+body { overflow-x: clip; }
+:focus-visible {
+  outline: 3px solid #1ba8c8;
+  outline-offset: 3px;
+}
+body.mobile-menu-open { overflow: hidden; }
+
 /* No celular, o botão controla um menu lateral sobre o conteúdo. */
 @media (max-width: 760px) {
   .shell .sidebar,
