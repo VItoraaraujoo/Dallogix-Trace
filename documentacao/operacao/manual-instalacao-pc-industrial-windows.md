@@ -8,10 +8,16 @@ Este procedimento instala o Trace como operação local de produção. O banco e
 - conta técnica local com permissão de administrador;
 - Docker Desktop instalado e iniciado;
 - Edge ou Chrome instalado;
-- disco com pelo menos 30 GB livres e rede cabeada estável;
+- disco com pelo menos 30 GB livres e Wi-Fi industrial estável;
 - IP, porta e protocolo do CLP confirmados; a câmera pode ser configurada depois.
 
 Crie duas contas Windows: `trace-operator`, sem privilégios administrativos, e `trace-tech`, exclusiva para manutenção. A conta técnica não deve ser usada na operação diária.
+
+### Wi-Fi industrial
+
+Use uma rede Wi-Fi industrial dedicada, protegida por WPA2/WPA3, com reserva DHCP ou IP previsível para o PC. Posicione o ponto de acesso para manter sinal estável na área da esteira e desative a economia de energia do adaptador Wi-Fi no Windows. O PC deve reconectar automaticamente após reinício ou perda de sinal.
+
+Mesmo conectado por Wi-Fi, a interface do Trace permanece limitada a `127.0.0.1`: outros dispositivos da rede não acessam o sistema local. O PC usa a rede apenas para sincronizar com o servidor central por HTTPS.
 
 ## 2. Copiar e configurar o pacote
 
