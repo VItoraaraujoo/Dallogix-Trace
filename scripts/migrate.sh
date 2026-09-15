@@ -6,13 +6,13 @@ migrations_dir="$root_dir/banco-de-dados/migrations"
 
 mysql_query() {
   local sql="$1"
-  docker compose --project-directory "$root_dir" exec -T mysql sh -lc \
+  bash "$root_dir/scripts/docker_compose.sh" --project-directory "$root_dir" exec -T mysql sh -lc \
     'mysql --batch --skip-column-names -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" -e "$1"' \
     trace-migrate "$sql"
 }
 
 mysql_file() {
-  docker compose --project-directory "$root_dir" exec -T mysql sh -lc \
+  bash "$root_dir/scripts/docker_compose.sh" --project-directory "$root_dir" exec -T mysql sh -lc \
     'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"' < "$1"
 }
 

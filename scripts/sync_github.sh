@@ -40,7 +40,7 @@ bash scripts/backup_db.sh
 bash scripts/migrate.sh
 # Reconstrói e recria somente os serviços afetados pela alteração. A VM, o
 # banco e os serviços que não mudaram permanecem em execução.
-docker compose up -d --build --remove-orphans
+bash "$root_dir/scripts/docker_compose.sh" up -d --build --remove-orphans
 healthy=0
 for _ in $(seq 1 "${HEALTHCHECK_ATTEMPTS:-90}"); do
   if curl --fail --silent --max-time 3 "http://127.0.0.1:${WEB_PORT:-8080}/api/prontidao.php" >/dev/null; then healthy=1; break; fi
