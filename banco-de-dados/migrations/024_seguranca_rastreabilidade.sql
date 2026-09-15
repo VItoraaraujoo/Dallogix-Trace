@@ -18,20 +18,41 @@ CREATE TABLE IF NOT EXISTS dispositivos (
   CONSTRAINT fk_dispositivo_equipamento FOREIGN KEY (equipment_id) REFERENCES equipamentos (id)
 );
 
-ALTER TABLE status_dispositivos
-  ADD COLUMN IF NOT EXISTS device_id BIGINT UNSIGNED NULL AFTER id,
-  ADD CONSTRAINT IF NOT EXISTS fk_status_dispositivo FOREIGN KEY (device_id) REFERENCES dispositivos (id) ON DELETE SET NULL;
+DELIMITER //
+CREATE PROCEDURE trace_ensure_migration_024_columns()
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'status_dispositivos' AND column_name = 'device_id') THEN
+    ALTER TABLE status_dispositivos ADD COLUMN device_id BIGINT UNSIGNED NULL AFTER id;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_schema = DATABASE() AND table_name = 'status_dispositivos' AND constraint_name = 'fk_status_dispositivo') THEN
+    ALTER TABLE status_dispositivos ADD CONSTRAINT fk_status_dispositivo FOREIGN KEY (device_id) REFERENCES dispositivos (id) ON DELETE SET NULL;
+  END IF;
 
-ALTER TABLE solicitacoes_comandos_clp
-  ADD COLUMN IF NOT EXISTS claimed_by_device_id BIGINT UNSIGNED NULL AFTER claimed_at,
-  ADD CONSTRAINT IF NOT EXISTS fk_command_claim_device FOREIGN KEY (claimed_by_device_id) REFERENCES dispositivos (id) ON DELETE SET NULL;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'solicitacoes_comandos_clp' AND column_name = 'claimed_by_device_id') THEN
+    ALTER TABLE solicitacoes_comandos_clp ADD COLUMN claimed_by_device_id BIGINT UNSIGNED NULL AFTER claimed_at;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_schema = DATABASE() AND table_name = 'solicitacoes_comandos_clp' AND constraint_name = 'fk_command_claim_device') THEN
+    ALTER TABLE solicitacoes_comandos_clp ADD CONSTRAINT fk_command_claim_device FOREIGN KEY (claimed_by_device_id) REFERENCES dispositivos (id) ON DELETE SET NULL;
+  END IF;
 
-ALTER TABLE solicitacoes_captura_camera
-  ADD COLUMN IF NOT EXISTS claimed_by_device_id BIGINT UNSIGNED NULL AFTER requested_at,
-  ADD CONSTRAINT IF NOT EXISTS fk_camera_claim_device FOREIGN KEY (claimed_by_device_id) REFERENCES dispositivos (id) ON DELETE SET NULL;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'solicitacoes_captura_camera' AND column_name = 'claimed_by_device_id') THEN
+    ALTER TABLE solicitacoes_captura_camera ADD COLUMN claimed_by_device_id BIGINT UNSIGNED NULL AFTER requested_at;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_schema = DATABASE() AND table_name = 'solicitacoes_captura_camera' AND constraint_name = 'fk_camera_claim_device') THEN
+    ALTER TABLE solicitacoes_captura_camera ADD CONSTRAINT fk_camera_claim_device FOREIGN KEY (claimed_by_device_id) REFERENCES dispositivos (id) ON DELETE SET NULL;
+  END IF;
 
-ALTER TABLE imagens
-  ADD COLUMN IF NOT EXISTS company_id BIGINT UNSIGNED NULL AFTER id;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'imagens' AND column_name = 'company_id') THEN
+    ALTER TABLE imagens ADD COLUMN company_id BIGINT UNSIGNED NULL AFTER id;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'usuarios' AND column_name = 'must_change_password') THEN
+    ALTER TABLE usuarios ADD COLUMN must_change_password TINYINT(1) NOT NULL DEFAULT 0 AFTER active;
+  END IF;
+END//
+DELIMITER ;
+CALL trace_ensure_migration_024_columns();
+DROP PROCEDURE trace_ensure_migration_024_columns;
 
 UPDATE imagens i
 JOIN carregamentos c ON c.id = i.carregamento_id
@@ -39,9 +60,21 @@ SET i.company_id = c.company_id
 WHERE i.company_id IS NULL;
 
 ALTER TABLE imagens
-  MODIFY COLUMN company_id BIGINT UNSIGNED NOT NULL,
-  ADD KEY IF NOT EXISTS idx_image_company_captured (company_id, captured_at),
-  ADD CONSTRAINT IF NOT EXISTS fk_image_company FOREIGN KEY (company_id) REFERENCES empresas (id);
+  MODIFY COLUMN company_id BIGINT UNSIGNED NOT NULL;
+
+DELIMITER //
+CREATE PROCEDURE trace_ensure_migration_024_image_constraints()
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'imagens' AND index_name = 'idx_image_company_captured') THEN
+    ALTER TABLE imagens ADD KEY idx_image_company_captured (company_id, captured_at);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_schema = DATABASE() AND table_name = 'imagens' AND constraint_name = 'fk_image_company') THEN
+    ALTER TABLE imagens ADD CONSTRAINT fk_image_company FOREIGN KEY (company_id) REFERENCES empresas (id);
+  END IF;
+END//
+DELIMITER ;
+CALL trace_ensure_migration_024_image_constraints();
+DROP PROCEDURE trace_ensure_migration_024_image_constraints;
 
 CREATE TABLE IF NOT EXISTS limites_login (
   identity_hash CHAR(64) PRIMARY KEY,
@@ -51,9 +84,6 @@ CREATE TABLE IF NOT EXISTS limites_login (
   violation_count INT UNSIGNED NOT NULL DEFAULT 0,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
-
-ALTER TABLE usuarios
-  ADD COLUMN IF NOT EXISTS must_change_password TINYINT(1) NOT NULL DEFAULT 0 AFTER active;
 
 UPDATE usuarios
 SET must_change_password = 1
@@ -97,8 +127,16 @@ JOIN (
 ) latest ON latest.company_id = l.company_id
 WHERE l.id <> latest.latest_id;
 
-ALTER TABLE licencas
-  ADD UNIQUE KEY IF NOT EXISTS uq_license_company (company_id);
+DELIMITER //
+CREATE PROCEDURE trace_ensure_migration_024_license_index()
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'licencas' AND index_name = 'uq_license_company') THEN
+    ALTER TABLE licencas ADD UNIQUE KEY uq_license_company (company_id);
+  END IF;
+END//
+DELIMITER ;
+CALL trace_ensure_migration_024_license_index();
+DROP PROCEDURE trace_ensure_migration_024_license_index;
 
 -- Equipamentos existentes recebem a configuração padrão uma única vez. Novos
 -- equipamentos são semeados pela aplicação durante a mesma transação de criação.
