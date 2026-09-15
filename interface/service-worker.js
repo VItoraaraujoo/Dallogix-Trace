@@ -1,4 +1,4 @@
-const CACHE_NAME = "trace-shell-20260915";
+const CACHE_NAME = "trace-shell-20260915-2";
 const SHELL = [
   "/",
   "/index.html",
@@ -75,6 +75,15 @@ self.addEventListener("fetch", (event) => {
       fetch(request)
         .then((response) => cacheResponse(request, response))
         .catch(async () => (await caches.match(request)) || caches.match("/index.html")),
+    );
+    return;
+  }
+
+  if (/\.(?:css|js)$/.test(url.pathname)) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => cacheResponse(request, response))
+        .catch(async () => (await caches.match(request)) || Response.error()),
     );
     return;
   }

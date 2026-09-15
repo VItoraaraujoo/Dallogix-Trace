@@ -307,17 +307,6 @@ textarea::placeholder {
   min-width: 920px;
 }
 
-.dala-action-command {
-  display: grid;
-  gap: 4px;
-}
-
-.dala-action-command code {
-  color: var(--muted);
-  font-size: 0.82em;
-  overflow-wrap: anywhere;
-}
-
 .error-logs-table {
   min-width: 900px;
 }
@@ -2165,6 +2154,10 @@ textarea {
 
 .actions .button {
   margin: 0;
+}
+
+.product-edit-actions {
+  justify-content: flex-end;
 }
 
 .emergency {

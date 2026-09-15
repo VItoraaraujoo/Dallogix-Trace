@@ -48,7 +48,9 @@
   flex: 1 1 auto;
 }
 .password-toggle {
+  align-self: stretch;
   flex: 0 0 auto;
+  min-height: 48px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #f7fafb;

@@ -758,7 +758,8 @@ function bindActions() {
         return;
       }
       if (action === "goto-manifests") {
-        navigate("manifests");
+        const returnToDashboard = new URLSearchParams(window.location.search).get("from") === "dashboard";
+        navigate(returnToDashboard ? "dashboard" : "manifests");
         return;
       }
       if (action === "manifest-page") {
@@ -796,7 +797,8 @@ function bindActions() {
         return;
       }
       if (action === "view-manifest") {
-        navigate("manifest", `?id=${node.dataset.id}`);
+        const fromDashboard = currentPage === "dashboard" ? "&from=dashboard" : "";
+        navigate("manifest", `?id=${node.dataset.id}${fromDashboard}`);
         return;
       }
       if (action === "edit-manifest") {
@@ -1244,6 +1246,7 @@ function bindLoginForm() {
   };
   password?.addEventListener("keydown", updateCapsLock);
   password?.addEventListener("keyup", updateCapsLock);
+  password?.addEventListener("input", updateCapsLock);
   passwordToggle?.addEventListener("click", () => {
     if (!password) return;
     const visible = password.type === "text";
