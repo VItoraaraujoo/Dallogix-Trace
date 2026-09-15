@@ -44,7 +44,9 @@ if (function_exists("ini_set")) {
 }
 
 session_name("dallogix_trace_session");
+$appUrl = strtolower(trim((string) (getenv("APP_URL") ?: "")));
 $isSecureSession =
+    str_starts_with($appUrl, "https://") ||
     ambiente_atual() === "production" ||
     filter_var(getenv("SESSION_SECURE") ?: "false", FILTER_VALIDATE_BOOLEAN);
 session_set_cookie_params([
@@ -259,83 +261,111 @@ function require_csrf(): void
     exigir_csrf();
 }
 
+function hash_limite_login_conta(string $identidade): string
+{
+    return hash("sha256", strtolower(trim($identidade)));
+}
+
+function hash_limite_login_ip(): string
+{
+    $ip = trim((string) ($_SERVER["REMOTE_ADDR"] ?? ""));
+    if (!filter_var($ip, FILTER_VALIDATE_IP)) {
+        $ip = "unknown";
+    }
+    return hash("sha256", "ip|" . $ip);
+}
+
+function registrar_tentativa_limitada_de_login(
+    PDO $connection,
+    string $identityHash,
+    int $maxAttempts,
+): ?int {
+    $ensure = $connection->prepare(
+        "INSERT INTO limites_login (identity_hash, attempts, window_started_at, blocked_until, violation_count)
+         VALUES (:identity_hash, 0, NOW(), NULL, 0)
+         ON DUPLICATE KEY UPDATE identity_hash = VALUES(identity_hash)",
+    );
+    $ensure->execute(["identity_hash" => $identityHash]);
+
+    $statement = $connection->prepare(
+        "SELECT attempts, blocked_until, violation_count,
+                TIMESTAMPDIFF(SECOND, window_started_at, NOW()) AS window_age_seconds,
+                TIMESTAMPDIFF(SECOND, NOW(), blocked_until) AS remaining_block_seconds
+         FROM limites_login WHERE identity_hash = :identity_hash LIMIT 1 FOR UPDATE",
+    );
+    $statement->execute(["identity_hash" => $identityHash]);
+    $limit = $statement->fetch();
+    if (!$limit) {
+        throw new RuntimeException("Registro de limite de login não encontrado.");
+    }
+
+    $remaining = max(0, (int) ($limit["remaining_block_seconds"] ?? 0));
+    if ($limit["blocked_until"] !== null && $remaining > 0) {
+        return $remaining;
+    }
+
+    $resetWindow = (int) ($limit["window_age_seconds"] ?? 0) >= 60;
+    $attempts = ($resetWindow ? 0 : (int) $limit["attempts"]) + 1;
+    if ($attempts >= $maxAttempts) {
+        $violations = (int) $limit["violation_count"] + 1;
+        $blockSeconds = min(900, 60 * (2 ** min(4, $violations - 1)));
+        $update = $connection->prepare(
+            "UPDATE limites_login
+             SET attempts = 0, window_started_at = NOW(),
+                 blocked_until = DATE_ADD(NOW(), INTERVAL {$blockSeconds} SECOND),
+                 violation_count = :violation_count
+             WHERE identity_hash = :identity_hash",
+        );
+        $update->execute([
+            "violation_count" => $violations,
+            "identity_hash" => $identityHash,
+        ]);
+        return $blockSeconds;
+    }
+
+    $update = $connection->prepare(
+        "UPDATE limites_login
+         SET attempts = :attempts,
+             window_started_at = IF(:reset_window = 1, NOW(), window_started_at),
+             blocked_until = NULL
+         WHERE identity_hash = :identity_hash",
+    );
+    $update->execute([
+        "attempts" => $attempts,
+        "reset_window" => $resetWindow ? 1 : 0,
+        "identity_hash" => $identityHash,
+    ]);
+    return null;
+}
+
 function verificar_taxa_de_login(string $identidade): void
 {
     if (getenv("TRACE_TESTING_DISABLE_LOGIN_RATE_LIMIT") === "1") {
         return;
     }
 
-    $identityHash = hash("sha256", strtolower(trim($identidade)));
     $connection = obter_conexao_banco();
     try {
         $connection->beginTransaction();
-        $ensure = $connection->prepare(
-            "INSERT INTO limites_login (identity_hash, attempts, window_started_at, blocked_until, violation_count)
-             VALUES (:identity_hash, 0, NOW(), NULL, 0)
-             ON DUPLICATE KEY UPDATE identity_hash = VALUES(identity_hash)",
-        );
-        $ensure->execute(["identity_hash" => $identityHash]);
-
-        $statement = $connection->prepare(
-            "SELECT attempts, window_started_at, blocked_until, violation_count
-             FROM limites_login WHERE identity_hash = :identity_hash LIMIT 1 FOR UPDATE",
-        );
-        $statement->execute(["identity_hash" => $identityHash]);
-        $limit = $statement->fetch();
-        if (!$limit) {
-            throw new RuntimeException("Registro de limite de login não encontrado.");
+        $retryAfter = null;
+        foreach ([
+            [hash_limite_login_ip(), 30],
+            [hash_limite_login_conta($identidade), 10],
+        ] as [$bucket, $maxAttempts]) {
+            $retryAfter = registrar_tentativa_limitada_de_login(
+                $connection,
+                $bucket,
+                $maxAttempts,
+            );
+            if ($retryAfter !== null) {
+                break;
+            }
         }
-
-        $now = time();
-        $blockedUntil = $limit["blocked_until"] !== null
-            ? strtotime((string) $limit["blocked_until"])
-            : false;
-        if ($blockedUntil !== false && $blockedUntil > $now) {
-            $retryAfter = max(1, $blockedUntil - $now);
-            $connection->commit();
+        $connection->commit();
+        if ($retryAfter !== null) {
             header("Retry-After: {$retryAfter}");
             responder_json(["error" => "Muitas tentativas. Aguarde alguns minutos."], 429);
         }
-
-        $windowStarted = strtotime((string) $limit["window_started_at"]);
-        $resetWindow = $windowStarted === false || $windowStarted <= $now - 60;
-        $attempts = $resetWindow ? 0 : (int) $limit["attempts"];
-        $attempts++;
-        if ($attempts >= 10) {
-            $violations = (int) $limit["violation_count"] + 1;
-            $blockSeconds = min(900, 60 * (2 ** min(4, $violations - 1)));
-            $blockedUntilValue = (new DateTimeImmutable("now"))
-                ->modify("+{$blockSeconds} seconds")
-                ->format("Y-m-d H:i:s");
-            $update = $connection->prepare(
-                "UPDATE limites_login
-                 SET attempts = 0, window_started_at = NOW(),
-                     blocked_until = :blocked_until,
-                     violation_count = :violation_count
-                 WHERE identity_hash = :identity_hash",
-            );
-            $update->execute([
-                "blocked_until" => $blockedUntilValue,
-                "violation_count" => $violations,
-                "identity_hash" => $identityHash,
-            ]);
-            $connection->commit();
-            header("Retry-After: {$blockSeconds}");
-            responder_json(["error" => "Muitas tentativas. Aguarde alguns minutos."], 429);
-        }
-
-        $update = $connection->prepare(
-            "UPDATE limites_login
-             SET attempts = :attempts, window_started_at = IF(:reset_window = 1, NOW(), window_started_at),
-                 blocked_until = NULL
-             WHERE identity_hash = :identity_hash",
-        );
-        $update->execute([
-            "attempts" => $attempts,
-            "reset_window" => $resetWindow ? 1 : 0,
-            "identity_hash" => $identityHash,
-        ]);
-        $connection->commit();
     } catch (Throwable $exception) {
         if ($connection->inTransaction()) {
             $connection->rollBack();
@@ -355,7 +385,7 @@ function registrar_login_sucesso(string $identidade): void
          WHERE identity_hash = :identity_hash",
     );
     $statement->execute([
-        "identity_hash" => hash("sha256", strtolower(trim($identidade))),
+        "identity_hash" => hash_limite_login_conta($identidade),
     ]);
 }
 
