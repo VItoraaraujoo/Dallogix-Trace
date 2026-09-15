@@ -7,6 +7,15 @@ function ambiente_atual(): string
     return strtolower(trim((string) (getenv("APP_ENV") ?: "local")));
 }
 
+function limite_sinal_clp_segundos(): int
+{
+    $configurado = filter_var(
+        getenv("CLP_SIGNAL_LIMIT_SECONDS") ?: 3,
+        FILTER_VALIDATE_INT,
+    );
+    return max(1, min(60, $configurado === false ? 3 : (int) $configurado));
+}
+
 $configuredTimezone = trim((string) (getenv("TZ") ?: "America/Sao_Paulo"));
 if ($configuredTimezone !== "") {
     date_default_timezone_set($configuredTimezone);

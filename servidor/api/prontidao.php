@@ -6,9 +6,11 @@ require_once __DIR__ . "/../configuracao/bootstrap.php";
 
 // Readiness check for deploys and support. It stays separate from health.php
 // so stale devices or a backed-up queue do not remove PHP from the load balancer.
+$mysqlConnected = false;
 try {
     $pdo = obter_conexao_banco();
     $pdo->query("SELECT 1");
+    $mysqlConnected = true;
     $queue = $pdo->query(
         "SELECT SUM(status = 'PENDENTE') AS pending,
                 SUM(status = 'PROCESSANDO') AS processing,
@@ -76,5 +78,13 @@ try {
     ], $status === "ready" ? 200 : 503);
 } catch (Throwable $error) {
     error_log("Readiness check failure: " . $error->getMessage());
-    responder_json(["status" => "not_ready", "php" => true, "mysql" => false], 503);
+    responder_json([
+        "status" => "not_ready",
+        "php" => true,
+        "mysql" => $mysqlConnected,
+        "error_code" => $mysqlConnected ? "SCHEMA_INCOMPLETO" : "BANCO_INDISPONIVEL",
+        "message" => $mysqlConnected
+            ? "O banco responde, mas o schema operacional não está pronto. Execute as migrations."
+            : "Não foi possível conectar ao banco de dados.",
+    ], 503);
 }

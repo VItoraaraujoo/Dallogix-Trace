@@ -43,17 +43,20 @@ final class ServicoDisponibilidadeClp
         ]);
         $clp = $statement->fetch();
 
+        $limiteSemSinal = function_exists("\\limite_sinal_clp_segundos")
+            ? \limite_sinal_clp_segundos()
+            : self::LIMITE_SEM_SINAL_SEGUNDOS;
         $online =
             $clp &&
             $clp["status"] === "ONLINE" &&
             $clp["last_seen_at"] !== null &&
-            (int) $clp["segundos_sem_sinal"] <= self::LIMITE_SEM_SINAL_SEGUNDOS;
+            (int) $clp["segundos_sem_sinal"] <= $limiteSemSinal;
         if ($online) {
             return;
         }
 
         throw new ExcecaoDisponibilidadeClp(
-            "Comunicação com o CLP indisponível há mais de 3 segundos. Novos comandos foram bloqueados; o sistema tentará reconectar a cada 2 segundos.",
+            "Comunicação com o CLP indisponível há mais de {$limiteSemSinal} segundos. Novos comandos foram bloqueados; o sistema tentará reconectar automaticamente.",
             423,
         );
     }

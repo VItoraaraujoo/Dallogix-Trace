@@ -13,6 +13,12 @@ if ($user["company_id"] === null) {
 
 $pdo = db();
 $companyId = $user["company_id"];
+$periodDays = filter_var($_GET["period_days"] ?? 30, FILTER_VALIDATE_INT);
+if ($periodDays === false) {
+    json_response(["error" => "Período de monitoramento inválido."], 422);
+}
+$periodDays = max(1, min(3650, (int) $periodDays));
+$clpSignalLimit = limite_sinal_clp_segundos();
 $query = static function (PDO $pdo, string $sql, array $params): array {
     $statement = $pdo->prepare($sql);
     $statement->execute($params);
@@ -21,12 +27,21 @@ $query = static function (PDO $pdo, string $sql, array $params): array {
 
 $romaneios = $query(
     $pdo,
-    "SELECT status, COUNT(*) AS total FROM romaneios WHERE company_id = :company_id GROUP BY status",
+    "SELECT status, COUNT(*) AS total
+     FROM romaneios
+     WHERE company_id = :company_id
+       AND created_at >= DATE_SUB(NOW(), INTERVAL {$periodDays} DAY)
+     GROUP BY status",
     ["company_id" => $companyId],
 );
 $readings = $query(
     $pdo,
-    "SELECT l.result, COUNT(*) AS total FROM leituras l JOIN carregamentos c ON c.id = l.carregamento_id WHERE c.company_id = :company_id GROUP BY l.result",
+    "SELECT l.result, COUNT(*) AS total
+     FROM leituras l
+     JOIN carregamentos c ON c.id = l.carregamento_id
+     WHERE c.company_id = :company_id
+       AND l.read_at >= DATE_SUB(NOW(), INTERVAL {$periodDays} DAY)
+     GROUP BY l.result",
     ["company_id" => $companyId],
 );
 $lastReading = $query(
@@ -53,7 +68,7 @@ $devices = $query(
     $pdo,
     "SELECT d.equipment_id, d.device_type,
             CASE
-                WHEN d.status = 'ONLINE' AND d.last_seen_at >= DATE_SUB(NOW(), INTERVAL 3 SECOND) THEN 'ONLINE'
+                WHEN d.status = 'ONLINE' AND d.last_seen_at >= DATE_SUB(NOW(), INTERVAL {$clpSignalLimit} SECOND) THEN 'ONLINE'
                 WHEN d.status = 'ERRO' THEN 'ERRO'
                 ELSE 'OFFLINE'
             END AS status,
@@ -102,5 +117,7 @@ json_response([
         "sync_pendente" => (int) ($pendingSync[0]["total"] ?? 0),
         "dispositivos" => $devices,
         "maquinas" => $maquinas,
+        "periodo_dias" => $periodDays,
+        "limite_sinal_clp_segundos" => $clpSignalLimit,
     ],
 ]);

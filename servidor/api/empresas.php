@@ -136,7 +136,7 @@ $machinesSql = "SELECT e.id, e.equipment_code, e.name,
             d.status AS clp_status, d.last_seen_at,
             c.state AS carregamento_state, r.number AS romaneio_number, rt.plate,
             COALESCE((SELECT SUM(ri.planned_quantity) FROM romaneio_itens ri WHERE ri.romaneio_id = c.romaneio_id AND (ri.truck_id = c.truck_id OR ri.truck_id IS NULL)), 0) AS planned_quantity,
-            (SELECT COUNT(*) FROM leituras l WHERE l.carregamento_id = c.id AND l.result = 'VALIDO') AS valid_readings
+            COALESCE(c.leituras_validas, 0) AS valid_readings
      FROM equipamentos e
      LEFT JOIN status_dispositivos d ON d.equipment_id = e.id AND d.device_type = 'CLP'
      LEFT JOIN carregamentos c ON c.id = (SELECT c2.id FROM carregamentos c2 WHERE c2.equipment_id = e.id ORDER BY c2.id DESC LIMIT 1)
