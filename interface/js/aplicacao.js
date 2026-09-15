@@ -4,7 +4,7 @@ import { el, esc } from "./funcoes/html.js";
 import { numero } from "./funcoes/formato.js";
 import { rotuloEstado } from "./funcoes/rotulos.js";
 import { settings } from "./telas/configuracoes.js?v=202609140210";
-import { dalaActions, dalaEdit, dalas, dalaView } from "./telas/dalas.js?v=202609151730";
+import { dalaActions, dalaEdit, dalas, dalaView } from "./telas/dalas.js?v=202609151900";
 import { company } from "./telas/empresa.js";
 import { companies } from "./telas/empresas.js";
 import { errorLogs } from "./telas/logs.js";
@@ -565,10 +565,10 @@ function bindActions() {
     document.body.dataset.shellInteractionsBound = "1";
     document.addEventListener("keydown", (event) => {
       if (event.key !== "Escape") return;
-      document.querySelectorAll(".dala-actions-menu-list").forEach((item) => {
+      document.querySelectorAll(".dala-menu-list-v2").forEach((item) => {
         item.hidden = true;
       });
-      document.querySelectorAll(".dala-actions-menu-trigger").forEach((item) => {
+      document.querySelectorAll(".dala-action-trigger-v2").forEach((item) => {
         item.setAttribute("aria-expanded", "false");
       });
       const shell = document.querySelector(".shell");
@@ -628,14 +628,14 @@ function bindActions() {
         return;
       }
       if (action === "toggle-dala-actions-menu") {
-        const menu = node.closest(".dala-actions-menu");
-        const list = menu?.querySelector(".dala-actions-menu-list");
+        const menu = node.closest(".dala-menu-v2");
+        const list = menu?.querySelector(".dala-menu-list-v2");
         if (!list) return;
         const willOpen = list.hidden;
-        document.querySelectorAll(".dala-actions-menu-list").forEach((item) => {
+        document.querySelectorAll(".dala-menu-list-v2").forEach((item) => {
           item.hidden = true;
         });
-        document.querySelectorAll(".dala-actions-menu-trigger").forEach((item) => {
+        document.querySelectorAll(".dala-action-trigger-v2").forEach((item) => {
           item.setAttribute("aria-expanded", "false");
         });
         list.hidden = !willOpen;
