@@ -85,7 +85,7 @@ export function manifestsTable(rows) {
         })
         .join("")
     : '<tr><td colspan="5" class="empty-cell">Nenhum romaneio encontrado.</td></tr>';
-  return `<div class="panel table-wrap"><table class="manifests-table"><thead><tr><th>Data do carregamento</th><th>Código do romaneio</th><th>Expedidor</th><th>Status</th><th>Ações</th></tr></thead><tbody>${body}</tbody></table></div>`;
+  return `<div class="panel table-wrap"><table class="manifests-table mobile-card-table"><thead><tr><th>Data do carregamento</th><th>Código do romaneio</th><th>Expedidor</th><th>Status</th><th>Ações</th></tr></thead><tbody>${body}</tbody></table></div>`;
 }
 
 export function deviceBadge(value) {
