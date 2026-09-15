@@ -512,6 +512,51 @@ function registrar_evento_operacional(
     ]);
 }
 
+function enfileirar_evento_sincronizacao(
+    PDO $conexao,
+    array $usuario,
+    string $acao,
+    string $tipoEntidade,
+    int $entidadeId,
+    array $payload = [],
+): void {
+    $companyId = filter_var(
+        $usuario["company_id"] ?? $payload["company_id"] ?? null,
+        FILTER_VALIDATE_INT,
+    );
+    if ($companyId === false || $companyId === null || (int) $companyId < 1) {
+        throw new RuntimeException("Evento de sincronização sem empresa vinculada.");
+    }
+
+    $eventUuid = sprintf(
+        "%s-%s-%s-%s-%s",
+        bin2hex(random_bytes(4)),
+        bin2hex(random_bytes(2)),
+        bin2hex(random_bytes(2)),
+        bin2hex(random_bytes(2)),
+        bin2hex(random_bytes(6)),
+    );
+    $payloadSincronizacao = json_encode(
+        [
+            "action" => $acao,
+            "entity_type" => $tipoEntidade,
+            "entity_id" => $entidadeId,
+            "data" => $payload,
+        ],
+        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR,
+    );
+    $fila = $conexao->prepare(
+        "INSERT INTO fila_sincronizacao (company_id, event_uuid, aggregate_type, aggregate_id, payload) VALUES (:company_id, :event_uuid, :aggregate_type, :aggregate_id, :payload)",
+    );
+    $fila->execute([
+        "company_id" => (int) $companyId,
+        "event_uuid" => $eventUuid,
+        "aggregate_type" => $tipoEntidade,
+        "aggregate_id" => $entidadeId,
+        "payload" => $payloadSincronizacao,
+    ]);
+}
+
 /** @deprecated Use registrar_evento_operacional() in new endpoints. */
 function record_operational_event(
     PDO $connection,
