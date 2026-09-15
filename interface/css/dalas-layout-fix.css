@@ -82,11 +82,13 @@
     }
 
     .dala-reference-actions {
-        flex-wrap: nowrap;
+        flex-wrap: wrap;
         gap: 6px;
     }
 
     .dala-reference-action {
+        flex: 1 1 82px;
+        min-width: 0;
         min-height: 42px;
         padding: 9px 13px;
         font-size: 13px;
