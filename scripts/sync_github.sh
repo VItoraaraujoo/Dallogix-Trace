@@ -42,8 +42,13 @@ bash scripts/migrate.sh
 # banco e os serviços que não mudaram permanecem em execução.
 bash "$root_dir/scripts/docker_compose.sh" up -d --build --remove-orphans
 healthy=0
+web_port="${WEB_PORT:-}"
+if [[ -z "$web_port" && -f "$root_dir/.env" ]]; then
+  web_port="$(sed -n 's/^WEB_PORT=//p' "$root_dir/.env" | tail -1 | tr -d '"')"
+fi
+web_port="${web_port:-8080}"
 for _ in $(seq 1 "${HEALTHCHECK_ATTEMPTS:-90}"); do
-  if curl --fail --silent --max-time 3 "http://127.0.0.1:${WEB_PORT:-8080}/api/prontidao.php" >/dev/null; then healthy=1; break; fi
+  if curl --fail --silent --max-time 3 "http://127.0.0.1:${web_port}/api/prontidao.php" >/dev/null; then healthy=1; break; fi
   sleep 2
 done
 [[ "$healthy" == "1" ]] || { echo "Atualização aplicada, mas o healthcheck falhou." >&2; exit 6; }
