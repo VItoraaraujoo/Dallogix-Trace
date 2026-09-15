@@ -197,6 +197,14 @@
 }
 
 @media (max-width: 900px) {
+  .dalas-screen-v2,
+  .dalas-grid-v2,
+  .dala-grid-row-v2 {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
   .dalas-header-v2 {
     align-items: stretch;
     flex-direction: column;
@@ -236,6 +244,20 @@
     padding: 11px 14px;
     border-bottom: 1px solid #e5edf1;
     text-align: left;
+  }
+
+  .dala-grid-cell-v2 > * {
+    width: auto;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .dala-grid-cell-v2 code,
+  .dala-grid-cell-v2 strong {
+    display: block;
+    white-space: normal;
+    word-break: normal;
+    overflow-wrap: anywhere;
   }
 
   .dala-grid-cell-v2::before {
