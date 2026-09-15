@@ -4,11 +4,11 @@ import { el, esc } from "./funcoes/html.js";
 import { numero } from "./funcoes/formato.js";
 import { rotuloEstado } from "./funcoes/rotulos.js";
 import { settings } from "./telas/configuracoes.js?v=202609140210";
-import { dalaActions, dalaEdit, dalas, dalaView } from "./telas/dalas.js?v=202609150130";
+import { dalaActions, dalaEdit, dalas, dalaView } from "./telas/dalas.js?v=202609150200";
 import { company } from "./telas/empresa.js";
 import { companies } from "./telas/empresas.js";
 import { errorLogs } from "./telas/logs.js";
-import { masterHome } from "./telas/master.js";
+import { masterHome } from "./telas/master.js?v=202609150200";
 import {
     alerts,
     emergency,
@@ -16,7 +16,7 @@ import {
     occurrences,
     products,
     summary,
-} from "./telas/monitoramento.js?v=202609150130";
+} from "./telas/monitoramento.js?v=202609150200";
 import {
     division,
     importScreen,
@@ -24,8 +24,8 @@ import {
     manifests,
     manifestView,
     work,
-} from "./telas/operacoes.js?v=202609150130";
-import { dashboard } from "./telas/painel.js?v=202609150130";
+} from "./telas/operacoes.js?v=202609150200";
+import { dashboard } from "./telas/painel.js?v=202609150200";
 import { users } from "./telas/usuarios.js";
 import { atualizarStatusDasDalas, linhaItemRomaneio } from "./controladores/operacao.js";
 

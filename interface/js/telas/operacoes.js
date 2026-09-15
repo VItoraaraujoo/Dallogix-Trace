@@ -6,7 +6,7 @@ import {
   manifestsTable,
   progress,
   statuses,
-} from "../funcoes/view.js?v=202609150130";
+} from "../funcoes/view.js?v=202609150200";
 
 const STATUS_OPTIONS = [
   ["", "Todos os status"],
