@@ -74,6 +74,7 @@ function responder_json(array $dados, int $status = 200): never
     exit();
 }
 
+/** @deprecated Use responder_json() in new endpoints. */
 function json_response(array $payload, int $status = 200): never
 {
     responder_json($payload, $status);
@@ -112,6 +113,7 @@ function obter_conexao_banco(): PDO
     return $connection;
 }
 
+/** @deprecated Use obter_conexao_banco() in new endpoints. */
 function db(): PDO
 {
     return obter_conexao_banco();
@@ -152,6 +154,7 @@ function ler_json_da_requisicao(bool $exigirTipoJson = true): array
     return $payload;
 }
 
+/** @deprecated Use ler_json_da_requisicao() in new endpoints. */
 function request_json(): array
 {
     return ler_json_da_requisicao();
@@ -224,6 +227,7 @@ function validar_licenca_ativa(PDO $pdo, int $companyId): array
     return $license;
 }
 
+/** @deprecated Use validar_licenca_ativa() in new endpoints. */
 function require_active_license(PDO $pdo, int $companyId): array
 {
     return validar_licenca_ativa($pdo, $companyId);
@@ -249,6 +253,7 @@ function exigir_csrf(): void
     }
 }
 
+/** @deprecated Use exigir_csrf() in new endpoints. */
 function require_csrf(): void
 {
     exigir_csrf();
@@ -406,6 +411,7 @@ function exigir_sessao_usuario(bool $permitirTrocaSenha = false): array
     return $usuarioPublico;
 }
 
+/** @deprecated Use exigir_sessao_usuario() in new endpoints. */
 function require_session_user(): array
 {
     return exigir_sessao_usuario();
@@ -420,6 +426,7 @@ function exigir_perfil(array $perfisPermitidos): array
     return $usuario;
 }
 
+/** @deprecated Use exigir_perfil() in new endpoints. */
 function require_role(array $allowedRoles): array
 {
     return exigir_perfil($allowedRoles);
@@ -505,6 +512,7 @@ function registrar_evento_operacional(
     ]);
 }
 
+/** @deprecated Use registrar_evento_operacional() in new endpoints. */
 function record_operational_event(
     PDO $connection,
     array $user,

@@ -436,28 +436,30 @@ try {
     $pdo->beginTransaction();
 
     $resolved = [];
+    $productById = $pdo->prepare(
+        "SELECT id, code, name FROM produtos WHERE id = :id AND company_id = :company_id AND active = 1 LIMIT 1",
+    );
+    $productByCodeOrBarcode = $pdo->prepare(
+        "SELECT id, code, name FROM produtos WHERE company_id = :company_id AND active = 1 AND (code = :code OR id IN (SELECT product_id FROM codigos_produtos WHERE barcode = :barcode)) LIMIT 1",
+    );
     foreach ($normalizedItems as $item) {
         if ($item["product_id"]) {
-            $productStatement = $pdo->prepare(
-                "SELECT id, code, name FROM produtos WHERE id = :id AND company_id = :company_id AND active = 1 LIMIT 1",
-            );
-            $productStatement->execute([
+            $productById->execute([
                 "id" => $item["product_id"],
                 "company_id" => $companyId,
             ]);
         } else {
             $code = substr((string) $item["key"], 5);
-            $productStatement = $pdo->prepare(
-                "SELECT id, code, name FROM produtos WHERE company_id = :company_id AND active = 1 AND (code = :code OR id IN (SELECT product_id FROM codigos_produtos WHERE barcode = :barcode)) LIMIT 1",
-            );
-            $productStatement->execute([
+            $productByCodeOrBarcode->execute([
                 "company_id" => $companyId,
                 "code" => $code,
                 "barcode" => $code,
             ]);
         }
 
-        $product = $productStatement->fetch();
+        $product = $item["product_id"]
+            ? $productById->fetch()
+            : $productByCodeOrBarcode->fetch();
         if (!$product) {
             $pdo->rollBack();
             responder_json(

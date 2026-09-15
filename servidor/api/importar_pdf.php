@@ -266,10 +266,19 @@ if (isset($fields["produto"]) && $fields["produto"] !== "") {
     $product = $found ?: null;
 }
 
-record_operational_event($pdo, $user, "ROMANEIO_PDF_IMPORTADO", "romaneio", 0, [
-    "campos_encontrados" => array_keys($fields),
-    "produto_encontrado" => (bool) $product,
-]);
+$pdo->beginTransaction();
+try {
+    record_operational_event($pdo, $user, "ROMANEIO_PDF_IMPORTADO", "romaneio", 0, [
+        "campos_encontrados" => array_keys($fields),
+        "produto_encontrado" => (bool) $product,
+    ]);
+    $pdo->commit();
+} catch (Throwable $exception) {
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+    throw $exception;
+}
 
 json_response([
     "data" => [
