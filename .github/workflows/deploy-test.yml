@@ -23,9 +23,9 @@ jobs:
           KNOWN_HOSTS: ${{ secrets.TEST_SERVER_KNOWN_HOSTS }}
         run: |
           install -d -m 700 "$HOME/.ssh"
-          # GitHub's textarea can preserve CRLF or receive only the Base64 body.
-          # Normalize both forms before handing the key to OpenSSH.
-          NORMALIZED_KEY=$(printf '%s\n' "$DEPLOY_KEY" | sed -E 's/^\\+//' | tr -d '\r')
+          # GitHub's textarea can preserve CRLF, escaped leading slashes, or receive only the Base64 body.
+          # Normalize all supported forms before handing the key to OpenSSH.
+          NORMALIZED_KEY=$(printf '%s\n' "$DEPLOY_KEY" | sed -E 's/^\\+//' | tr -d '\r' | tr -d '\\')
           key_header="$(printf '%s' 'LS0tLS1CRUdJTiBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0=' | base64 -d)"
           key_footer="$(printf '%s' 'LS0tLS1FTkQgT1BFTlNTSCBQUklWQVRFIEtFWS0tLS0t' | base64 -d)"
           if printf '%s' "$NORMALIZED_KEY" | grep -q -- 'OPENSSH'; then
