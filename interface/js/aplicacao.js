@@ -498,10 +498,17 @@ function installInteractionGuards() {
   });
 }
 function downloadCsv(filename, rows) {
+  const csvCell = (value) => {
+    let text = String(value ?? "");
+    // Planilhas interpretam células iniciadas por estes caracteres como fórmulas.
+    // Dados operacionais exportados devem permanecer texto ao abrir no Excel/LibreOffice.
+    if (/^[\t\r\n ]*[=+\-@]/.test(text)) text = `'${text}`;
+    return `"${text.replaceAll('"', '""')}"`;
+  };
   const csv = rows
     .map((row) =>
       row
-        .map((value) => `"${String(value ?? "").replaceAll('"', '""')}"`)
+        .map(csvCell)
         .join(";"),
     )
     .join("\n");
