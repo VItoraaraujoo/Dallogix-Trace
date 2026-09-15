@@ -42,7 +42,7 @@ $statusDasDalas = array_map(
             "ONLINE" => "CLP online.",
             "ERRO" => "CLP reportou erro.",
             default => $segundos === null
-                ? "CLP sem heartbeat registrado."
+                ? "CLP sem sinal de comunicação registrado."
                 : "CLP sem sinal há {$segundos} segundos.",
         };
         return [
