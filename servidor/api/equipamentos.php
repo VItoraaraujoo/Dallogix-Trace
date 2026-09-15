@@ -2,6 +2,9 @@
 declare(strict_types=1);
 
 require_once __DIR__ . "/../configuracao/bootstrap.php";
+require_once __DIR__ . "/../src/Aplicacao/InicializadorAcoesDala.php";
+
+use App\Aplicacao\InicializadorAcoesDala;
 
 $user = require_session_user();
 if ($user["company_id"] === null) {
@@ -150,6 +153,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         );
     }
     $data = $validatePayload(request_json());
+    $pdo->beginTransaction();
     try {
         $insert = $pdo->prepare(
             "INSERT INTO equipamentos (company_id, equipment_code, name, plc_ip, plc_port, external_port, plc_protocol) VALUES (:company_id, :equipment_code, :name, :plc_ip, :plc_port, :external_port, :plc_protocol)",
@@ -164,6 +168,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             "plc_protocol" => $data["protocol"],
         ]);
         $id = (int) $pdo->lastInsertId();
+        InicializadorAcoesDala::garantir($pdo, (int) $user["company_id"], $id);
         record_operational_event(
             $pdo,
             $user,
@@ -175,12 +180,21 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 "plc_protocol" => $data["protocol"],
             ],
         );
+        $pdo->commit();
         json_response(
             ["data" => ["id" => $id, "equipment_code" => $data["code"]]],
             201,
         );
-    } catch (Throwable $exception) {
+    } catch (PDOException $exception) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
         json_response(["error" => "Identificador da Dala já cadastrado."], 409);
+    } catch (Throwable $exception) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        throw $exception;
     }
 }
 

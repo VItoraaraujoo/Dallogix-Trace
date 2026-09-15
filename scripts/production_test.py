@@ -31,7 +31,18 @@ def main():
     storage.chmod(0o777)  # O usuário PHP do contêiner escreve neste bind isolado.
     if not ENV.exists():
         run(['bash', 'scripts/setup_production_env.sh', str(ENV), 'https://localhost:8443'])
-    run(['bash', 'scripts/check_production_env.sh', str(ENV)])
+    else:
+        env_text = ENV.read_text()
+        missing = []
+        for key in ('TRACE_DEVICE_TOKEN', 'CAMERA_DEVICE_TOKEN'):
+            if not any(line.startswith(f'{key}=') for line in env_text.splitlines()):
+                missing.append(f'{key}={secrets.token_hex(32)}')
+        if missing:
+            ENV.write_text(env_text.rstrip() + '\n' + '\n'.join(missing) + '\n')
+            ENV.chmod(0o600)
+    check_env = os.environ.copy()
+    check_env['TRACE_ENV_CHECK_SKIP_DATABASE'] = '1'
+    run(['bash', 'scripts/check_production_env.sh', str(ENV)], env=check_env)
     if not (tls / 'fullchain.pem').exists():
         conf = tls / 'openssl.cnf'
         conf.write_text('[req]\ndistinguished_name=dn\nx509_extensions=ext\nprompt=no\n[dn]\nCN=localhost\n[ext]\nsubjectAltName=DNS:localhost,IP:127.0.0.1\nbasicConstraints=critical,CA:TRUE\nkeyUsage=critical,digitalSignature,keyEncipherment,keyCertSign\nextendedKeyUsage=serverAuth\n')
@@ -59,7 +70,7 @@ def main():
                 json.dump(credentials, f, indent=2)
         code = '''$pdo=new PDO("mysql:host=mysql;dbname=".getenv("DB_NAME"),getenv("DB_USER"),getenv("DB_PASSWORD"),[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
         $pdo->beginTransaction();
-        $stmt=$pdo->prepare("UPDATE usuarios SET password_hash=? WHERE email=?");
+        $stmt=$pdo->prepare("UPDATE usuarios SET password_hash=?, must_change_password=0 WHERE email=?");
         foreach(json_decode(stream_get_contents(STDIN),true,512,JSON_THROW_ON_ERROR) as $email=>$password){$stmt->execute([password_hash($password,PASSWORD_DEFAULT),$email]);}
         $pdo->exec("INSERT INTO trace_deployment_migrations VALUES ('production-test-accounts')");$pdo->commit();'''
         run(COMPOSE + ['exec', '-T', 'php', 'php', '-r', code], input=json.dumps(credentials), text=True)

@@ -54,18 +54,34 @@ function pdf_text_from_content(string $content): string
  */
 function pdf_extract_text(string $binary): string
 {
+    $maxInflatedStreamBytes = 4 * 1024 * 1024;
+    $maxInflatedTotalBytes = 16 * 1024 * 1024;
     $text = "";
-    if (
-        !preg_match_all('/stream\r?\n(.*?)\r?\nendstream/s', $binary, $streams)
-    ) {
+    $matches = preg_match_all(
+        '/stream\r?\n(.{0,4194304}?)\r?\nendstream/s',
+        $binary,
+        $streams,
+    );
+    if ($matches === false) {
+        throw new RuntimeException("Não foi possível analisar os streams do PDF.");
+    }
+    if ($matches === 0) {
         return "";
     }
+    $inflatedTotal = 0;
     foreach ($streams[1] as $stream) {
-        $inflated = @gzinflate($stream);
+        if (strlen($stream) > $maxInflatedStreamBytes) {
+            throw new RuntimeException("Stream do PDF excede o limite permitido.");
+        }
+        $inflated = @gzinflate($stream, $maxInflatedStreamBytes);
         if ($inflated === false) {
-            $inflated = @gzinflate(rtrim($stream, "\r\n"));
+            $inflated = @gzinflate(rtrim($stream, "\r\n"), $maxInflatedStreamBytes);
         }
         $content = $inflated !== false ? $inflated : $stream;
+        $inflatedTotal += strlen($content);
+        if ($inflatedTotal > $maxInflatedTotalBytes) {
+            throw new RuntimeException("Conteúdo descompactado do PDF excede o limite permitido.");
+        }
         if (
             $inflated === false &&
             !preg_match('/\)\s*(?:Tj|TJ|\'|\")/', $content)
@@ -132,8 +148,8 @@ $file = $_FILES["file"] ?? null;
 if (!$file || ($file["error"] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK || !is_uploaded_file($file["tmp_name"] ?? "")) {
     json_response(["error" => "Selecione o arquivo PDF do romaneio."], 422);
 }
-if (($file["size"] ?? 0) < 1 || ($file["size"] ?? 0) > 10 * 1024 * 1024) {
-    json_response(["error" => "Arquivo maior que 10 MB."], 422);
+if (($file["size"] ?? 0) < 1 || ($file["size"] ?? 0) > 6 * 1024 * 1024) {
+    json_response(["error" => "Arquivo maior que 6 MB."], 422);
 }
 $mime = (new finfo(FILEINFO_MIME_TYPE))->file($file["tmp_name"]);
 if ($mime !== "application/pdf") {
@@ -145,9 +161,11 @@ if (!str_ends_with(strtolower($originalName), ".pdf")) {
 }
 
 $binary = (string) file_get_contents($file["tmp_name"]);
-if (!str_starts_with($binary, "%PDF")) {
+if (!str_starts_with($binary, "%PDF-")) {
     json_response(["error" => "Arquivo não parece um PDF válido."], 422);
 }
+
+set_time_limit(5);
 
 $text = pdf_extract_text($binary);
 if (trim($text) === "") {

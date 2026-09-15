@@ -13,8 +13,7 @@ if ($user["company_id"] === null) {
 }
 
 $pdo = db();
-$scope =
-    "EXISTS (SELECT 1 FROM logs_auditoria a WHERE a.company_id = :company_id AND a.entity_type = q.aggregate_type AND a.entity_id = q.aggregate_id)";
+$scope = "q.company_id = :company_id";
 $params = ["company_id" => $user["company_id"]];
 $counts = $pdo->prepare(
     "SELECT q.status, COUNT(*) AS total FROM fila_sincronizacao q WHERE {$scope} GROUP BY q.status",
@@ -29,7 +28,10 @@ $recent = $pdo->prepare(
     "SELECT q.id, q.aggregate_type, q.aggregate_id, q.status, q.attempts, q.last_error, q.available_at, q.created_at FROM fila_sincronizacao q WHERE {$scope} AND q.status IN ('PENDENTE', 'ERRO') ORDER BY q.id DESC LIMIT 20",
 );
 $recent->execute($params);
-$remoteUrl = trim((string) (getenv("SYNC_REMOTE_URL") ?: ""));
+$remoteUrl = trim((string) (getenv("SYNC_REMOTE_BATCH_URL") ?: ""));
+if ($remoteUrl === "") {
+    $remoteUrl = trim((string) (getenv("SYNC_REMOTE_URL") ?: ""));
+}
 if ($remoteUrl === "") {
     $settings = $pdo->prepare(
         "SELECT sync_remote_url FROM configuracoes_empresa WHERE company_id = :company_id LIMIT 1",

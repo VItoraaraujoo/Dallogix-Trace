@@ -21,7 +21,8 @@ foreach ($files as $file) {
     $issues = [];
     $relative = str_replace($root . DIRECTORY_SEPARATOR, '', $file);
 
-    if (!str_contains($content, 'require_once __DIR__ . "/../configuracao/bootstrap.php"')) {
+    $retiredEndpoint = str_contains($content, 'http_response_code(410)');
+    if (!$retiredEndpoint && !str_contains($content, 'require_once __DIR__ . "/../configuracao/bootstrap.php"')) {
         $issues[] = 'bootstrap não carregado';
     }
 
@@ -39,6 +40,7 @@ foreach ($files as $file) {
         || str_contains($content, 'require_role(')
         || str_contains($content, 'exigir_perfil(')
         || str_contains($content, 'obter_usuario_sessao(')
+        || str_contains($content, 'require_device_token(')
         || str_contains($content, 'session_user(')
         || str_contains($content, 'require_internal_token(')
         || str_contains($content, 'exigir_token_interno(')

@@ -28,7 +28,7 @@ if (mb_strlen($password) < 6 || mb_strlen($password) > 128) {
 verificar_taxa_de_login($email);
 
 $statement = obter_conexao_banco()->prepare(
-    "SELECT id, company_id, name, email, password_hash, role, active FROM usuarios WHERE email = :email LIMIT 1",
+    "SELECT id, company_id, name, email, password_hash, role, active, must_change_password FROM usuarios WHERE email = :email LIMIT 1",
 );
 $statement->execute(["email" => $email]);
 $usuario = $statement->fetch();
@@ -42,6 +42,8 @@ if (
     responder_json(["error" => "Credenciais inválidas."], 401);
 }
 
+registrar_login_sucesso($email);
+
 if (password_needs_rehash($usuario["password_hash"], PASSWORD_DEFAULT)) {
     $rehash = db()->prepare(
         "UPDATE usuarios SET password_hash = :password_hash WHERE id = :id",
@@ -54,9 +56,11 @@ if (password_needs_rehash($usuario["password_hash"], PASSWORD_DEFAULT)) {
 
 session_regenerate_id(true);
 $_SESSION["user"] = usuario_publico($usuario);
+$_SESSION["user_validated_at"] = time();
 
 responder_json([
     "authenticated" => true,
     "user" => $_SESSION["user"],
     "csrf_token" => gerar_token_csrf(),
+    "password_change_required" => (bool) $_SESSION["user"]["must_change_password"],
 ]);

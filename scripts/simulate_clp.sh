@@ -5,10 +5,15 @@ base_url="${TRACE_BASE_URL:-http://localhost:8080}"
 cookie_file="/tmp/dallogix-trace-sim-clp-cookie.txt"
 loading_id="${TRACE_LOADING_ID:-}"
 equipment_id="${TRACE_EQUIPMENT_ID:-}"
-plc_token="${PLC_INTERNAL_TOKEN:-change-me-plc-token}"
+device_token="${TRACE_DEVICE_TOKEN:-}"
 barcode="${1:-7898250782592}"
 event_suffix="$(printf '%04x%08x' "$RANDOM" "$(date +%s)")"
 event_uuid="88888888-8888-4888-8888-${event_suffix}"
+
+if [[ -z "$device_token" ]]; then
+  echo "Defina TRACE_DEVICE_TOKEN com a credencial do CLP simulado."
+  exit 1
+fi
 
 login="$(curl -sS -c "$cookie_file" -H 'Content-Type: application/json' -d '{"email":"admin@dallogix.local","password":"password"}' "$base_url/api/login.php")"
 if ! printf '%s' "$login" | grep -q '"authenticated":true'; then
@@ -43,7 +48,7 @@ fi
 
 heartbeat="$(curl -sS -X POST \
   -H 'Content-Type: application/json' \
-  -H "X-Internal-Token: ${plc_token}" \
+  -H "X-Device-Token: ${device_token}" \
   -d "{\"equipment_id\":${equipment_id},\"device_type\":\"CLP\",\"status\":\"ONLINE\",\"details\":{\"source\":\"pc-simulator\"}}" \
   "$base_url/api/device_heartbeat.php")"
 if ! printf '%s' "$heartbeat" | grep -q '"status":"ONLINE"'; then

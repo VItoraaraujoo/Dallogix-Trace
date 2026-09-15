@@ -13,7 +13,7 @@ $pdo = new PDO(
     $password,
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION],
 );
-$cutoff = new DateTimeImmutable("-{$days} days")->format("Y-m-d H:i:s");
+$cutoff = (new DateTimeImmutable("-{$days} days"))->format("Y-m-d H:i:s");
 $statement = $pdo->prepare(
     "SELECT id, path FROM imagens WHERE captured_at < :cutoff",
 );

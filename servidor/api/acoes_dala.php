@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . "/../configuracao/bootstrap.php";
+require_once __DIR__ . "/../src/Aplicacao/InicializadorAcoesDala.php";
 
 $user = require_session_user();
 if ($user["company_id"] === null) {
@@ -24,26 +25,6 @@ function require_dala(PDO $pdo, int $equipmentId, int $companyId): void
     }
 }
 
-function ensure_default_actions(PDO $pdo, int $companyId, int $equipmentId): void
-{
-    $existing = $pdo->prepare("SELECT id FROM acoes_dala WHERE equipment_id = :equipment_id LIMIT 1");
-    $existing->execute(["equipment_id" => $equipmentId]);
-    if ($existing->fetch()) return;
-    $defaults = [
-        ["INICIAR_CARREGAMENTO", "LIGAR", "VERDE", "INCREMENTAL"],
-        ["PAUSAR_CARREGAMENTO", "PARAR", "VERMELHO", "INCREMENTAL"],
-        ["REVERSAO_ATIVAR", "REVERSO", "CINZA", "DECREMENTAL"],
-        ["REVERSAO_DESATIVAR", "PARAR REVERSO", "AMBAR", "DIRETO"],
-    ];
-    $insert = $pdo->prepare("INSERT INTO acoes_dala (company_id, equipment_id, comando, rotulo, cor, modo, ordem) VALUES (:company_id, :equipment_id, :comando, :rotulo, :cor, :modo, :ordem)");
-    foreach ($defaults as $index => [$command, $label, $color, $mode]) {
-        $insert->execute(["company_id" => $companyId, "equipment_id" => $equipmentId, "comando" => $command, "rotulo" => $label, "cor" => $color, "modo" => $mode, "ordem" => $index + 1]);
-    }
-    $stopId = (int) $pdo->query("SELECT id FROM acoes_dala WHERE equipment_id = {$equipmentId} AND comando = 'PAUSAR_CARREGAMENTO' LIMIT 1")->fetchColumn();
-    $trigger = $pdo->prepare("INSERT INTO gatilhos_dala (company_id, equipment_id, evento, acao_id) VALUES (:company_id, :equipment_id, 'QUANTIDADE_PLANEJADA_ATINGIDA', :acao_id)");
-    $trigger->execute(["company_id" => $companyId, "equipment_id" => $equipmentId, "acao_id" => $stopId ?: null]);
-}
-
 function action_payload(array $payload): array
 {
     $command = strtoupper(trim((string) ($payload["comando"] ?? "")));
@@ -60,7 +41,6 @@ function action_payload(array $payload): array
 $pdo = db();
 require_dala($pdo, (int) $equipmentId, $companyId);
 if ($_SERVER["REQUEST_METHOD"] === "GET") {
-    ensure_default_actions($pdo, $companyId, (int) $equipmentId);
     $actions = $pdo->prepare("SELECT id, comando, rotulo, cor, visivel, modo, ordem FROM acoes_dala WHERE equipment_id = :equipment_id AND company_id = :company_id ORDER BY ordem, id");
     $actions->execute(["equipment_id" => $equipmentId, "company_id" => $companyId]);
     $triggers = $pdo->prepare("SELECT g.id, g.evento, g.acao_id, g.ativo, a.rotulo AS acao_rotulo FROM gatilhos_dala g LEFT JOIN acoes_dala a ON a.id = g.acao_id WHERE g.equipment_id = :equipment_id AND g.company_id = :company_id ORDER BY g.id");
@@ -72,7 +52,11 @@ require_csrf();
 $method = $_SERVER["REQUEST_METHOD"];
 if ($method === "POST") {
     $data = action_payload($payload);
-    $next = (int) $pdo->query("SELECT COALESCE(MAX(ordem), 0) + 1 FROM acoes_dala WHERE equipment_id = " . (int) $equipmentId)->fetchColumn();
+    $nextStatement = $pdo->prepare(
+        "SELECT COALESCE(MAX(ordem), 0) + 1 FROM acoes_dala WHERE equipment_id = :equipment_id",
+    );
+    $nextStatement->execute(["equipment_id" => $equipmentId]);
+    $next = (int) $nextStatement->fetchColumn();
     $insert = $pdo->prepare("INSERT INTO acoes_dala (company_id, equipment_id, comando, rotulo, cor, visivel, modo, ordem) VALUES (:company_id, :equipment_id, :comando, :rotulo, :cor, :visivel, :modo, :ordem)");
     try { $insert->execute(["company_id" => $companyId, "equipment_id" => $equipmentId, ...$data, "ordem" => $next]); }
     catch (Throwable) { json_response(["error" => "Já existe uma ação com esse comando nesta Dala."], 409); }

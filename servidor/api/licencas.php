@@ -39,20 +39,33 @@ $company = $pdo->prepare("SELECT id FROM empresas WHERE id = :id LIMIT 1");
 $company->execute(["id" => $companyId]);
 if (!$company->fetch()) json_response(["error" => "Empresa não encontrada."], 404);
 
-$statement = $pdo->prepare(
-    "INSERT INTO licencas (company_id, plan_name, billing_period, status, blocked_at, blocked_reason)
-     VALUES (:company_id, :plan_name, 'MENSAL', :status, :blocked_at, :reason)",
-);
-$statement->execute([
-    "company_id" => $companyId,
-    "plan_name" => $plan,
-    "status" => $status,
-    "blocked_at" => $status === "ATIVA" ? null : date("Y-m-d H:i:s"),
-    "reason" => $reason !== "" ? $reason : null,
-]);
-$id = (int) $pdo->lastInsertId();
-record_operational_event($pdo, $user, "LICENCA_ATUALIZADA", "license", $id, [
-    "company_id" => (int) $companyId,
-    "status" => $status,
-]);
+$pdo->beginTransaction();
+try {
+    $statement = $pdo->prepare(
+        "INSERT INTO licencas (company_id, plan_name, billing_period, status, blocked_at, blocked_reason)
+         VALUES (:company_id, :plan_name, 'MENSAL', :status, :blocked_at, :reason)
+         ON DUPLICATE KEY UPDATE plan_name = VALUES(plan_name), status = VALUES(status),
+             blocked_at = VALUES(blocked_at), blocked_reason = VALUES(blocked_reason)",
+    );
+    $statement->execute([
+        "company_id" => $companyId,
+        "plan_name" => $plan,
+        "status" => $status,
+        "blocked_at" => $status === "ATIVA" ? null : date("Y-m-d H:i:s"),
+        "reason" => $reason !== "" ? $reason : null,
+    ]);
+    $idStatement = $pdo->prepare("SELECT id FROM licencas WHERE company_id = :company_id LIMIT 1");
+    $idStatement->execute(["company_id" => $companyId]);
+    $id = (int) $idStatement->fetchColumn();
+    record_operational_event($pdo, $user, "LICENCA_ATUALIZADA", "license", $id, [
+        "company_id" => (int) $companyId,
+        "status" => $status,
+    ]);
+    $pdo->commit();
+} catch (Throwable $exception) {
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+    throw $exception;
+}
 json_response(["data" => ["id" => $id, "company_id" => (int) $companyId, "status" => $status]], 201);

@@ -173,7 +173,7 @@ if ($requestedCompanyId !== null) {
     }
 
     $sincronizacaoPendente = $pdo->prepare(
-        "SELECT COUNT(*) AS total FROM fila_sincronizacao q JOIN logs_auditoria a ON a.entity_type = q.aggregate_type AND a.entity_id = q.aggregate_id WHERE a.company_id = :company_id AND q.status = 'PENDENTE'",
+        "SELECT COUNT(*) AS total FROM fila_sincronizacao q WHERE q.company_id = :company_id AND q.status IN ('PENDENTE', 'ERRO', 'PROCESSANDO')",
     );
     $sincronizacaoPendente->execute(["company_id" => $requestedCompanyId]);
 

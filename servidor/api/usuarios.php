@@ -115,26 +115,34 @@ if ($_SERVER["REQUEST_METHOD"] === "PUT") {
     ];
 
     if ($senha !== "") {
-        $sql .= ", password_hash = :password_hash";
+        $sql .= ", password_hash = :password_hash, must_change_password = 1";
         $params["password_hash"] = password_hash($senha, PASSWORD_DEFAULT);
     }
 
     $sql .= " WHERE id = :id";
-    $pdo->prepare($sql)->execute($params);
-
-    record_operational_event(
-        $pdo,
-        $ator,
-        "USUARIO_ATUALIZADO",
-        "user",
-        (int) $id,
-        [
-            "company_id" => $empresaId,
-            "role" => $perfil,
-            "active" => $ativo ? 1 : 0,
-            "password_reset" => $senha !== "",
-        ],
-    );
+    $pdo->beginTransaction();
+    try {
+        $pdo->prepare($sql)->execute($params);
+        record_operational_event(
+            $pdo,
+            $ator,
+            "USUARIO_ATUALIZADO",
+            "user",
+            (int) $id,
+            [
+                "company_id" => $empresaId,
+                "role" => $perfil,
+                "active" => $ativo ? 1 : 0,
+                "password_reset" => $senha !== "",
+            ],
+        );
+        $pdo->commit();
+    } catch (Throwable $exception) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        throw $exception;
+    }
 
     json_response(["data" => ["id" => (int) $id, "updated" => true]]);
 }
@@ -180,6 +188,7 @@ if (!$empresaExiste->fetch()) {
 }
 
 try {
+    $pdo->beginTransaction();
     $insert = $pdo->prepare(
         "INSERT INTO usuarios (company_id, name, email, password_hash, role) VALUES (:company_id, :name, :email, :password_hash, :role)",
     );
@@ -196,6 +205,7 @@ try {
         "company_id" => $empresaId,
         "role" => $perfil,
     ]);
+    $pdo->commit();
 
     json_response(
         [
@@ -209,5 +219,13 @@ try {
         201,
     );
 } catch (PDOException $exception) {
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
     json_response(["error" => "Já existe um login com este e-mail."], 409);
+} catch (Throwable $exception) {
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+    throw $exception;
 }

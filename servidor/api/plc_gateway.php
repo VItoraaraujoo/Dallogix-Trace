@@ -8,8 +8,8 @@ use App\Aplicacao\ExcecaoGatewayClp;
 use App\Aplicacao\ServicoGatewayClp;
 
 // Este endpoint é exclusivo do gateway industrial instalado no PC da máquina.
-// Ele entrega intenções auditáveis; não substitui o Ladder nem os intertravamentos.
-require_internal_token("PLC_INTERNAL_TOKEN", "change-me-plc-token");
+// A credencial identifica o dispositivo e limita a fila à sua própria Dala.
+$device = require_device_token(["CLP"]);
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     json_response(["error" => "Método não permitido."], 405);
 }
@@ -23,7 +23,10 @@ try {
             $payload["equipment_id"] ?? null,
             FILTER_VALIDATE_INT,
         );
-        $request = $service->claim((int) $equipmentId);
+        if ($equipmentId !== false && (int) $equipmentId !== $device["equipment_id"]) {
+            json_response(["error" => "O equipamento não pertence a este gateway."], 403);
+        }
+        $request = $service->claim($device["equipment_id"], $device["id"]);
         if (!$request) {
             http_response_code(204);
             exit();
@@ -40,7 +43,7 @@ try {
     $status = strtoupper(trim((string) ($payload["status"] ?? "")));
     $message = trim((string) ($payload["message"] ?? ""));
     json_response([
-        "data" => $service->complete((int) $requestId, $status, $message),
+        "data" => $service->complete((int) $requestId, $device["id"], $status, $message),
     ]);
 } catch (ExcecaoGatewayClp $exception) {
     json_response(

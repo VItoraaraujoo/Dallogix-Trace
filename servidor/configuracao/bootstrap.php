@@ -148,32 +148,51 @@ function request_json(): array
     return ler_json_da_requisicao();
 }
 
-function exigir_token_interno(string $environmentKey, string $developmentDefault): void
+/** @return array{id:int, company_id:int, equipment_id:int, device_code:string, device_type:string} */
+function require_device_token(array $allowedDeviceTypes = []): array
 {
-    $expected = trim((string) (getenv($environmentKey) ?: ""));
-    if (
-        ambiente_atual() === "production" &&
-        ($expected === "" || $expected === $developmentDefault)
-    ) {
-        responder_json(["error" => "Token interno não configurado."], 503);
+    $provided = trim((string) ($_SERVER["HTTP_X_DEVICE_TOKEN"] ?? ""));
+    if ($provided === "") {
+        responder_json(["error" => "Credencial do dispositivo ausente."], 401);
     }
 
-    $provided = trim((string) ($_SERVER["HTTP_X_INTERNAL_TOKEN"] ?? ""));
-    if ($expected === "" || !hash_equals($expected, $provided)) {
-        responder_json(["error" => "Token interno inválido."], 401);
+    $statement = obter_conexao_banco()->query(
+        "SELECT id, company_id, equipment_id, device_code, device_type, token_hash
+         FROM dispositivos WHERE active = 1",
+    );
+    $device = null;
+    foreach ($statement->fetchAll() as $candidate) {
+        if (password_verify($provided, (string) $candidate["token_hash"])) {
+            $device = $candidate;
+            break;
+        }
     }
-}
+    if ($device === null) {
+        responder_json(["error" => "Credencial do dispositivo inválida."], 401);
+    }
+    if ($allowedDeviceTypes !== [] && !in_array($device["device_type"], $allowedDeviceTypes, true)) {
+        responder_json(["error" => "Dispositivo sem permissão para esta operação."], 403);
+    }
 
-function require_internal_token(string $environmentKey, string $developmentDefault): void
-{
-    exigir_token_interno($environmentKey, $developmentDefault);
+    $touch = obter_conexao_banco()->prepare(
+        "UPDATE dispositivos SET last_seen_at = NOW() WHERE id = :id AND active = 1",
+    );
+    $touch->execute(["id" => $device["id"]]);
+
+    return [
+        "id" => (int) $device["id"],
+        "company_id" => (int) $device["company_id"],
+        "equipment_id" => (int) $device["equipment_id"],
+        "device_code" => (string) $device["device_code"],
+        "device_type" => (string) $device["device_type"],
+    ];
 }
 
 function validar_licenca_ativa(PDO $pdo, int $companyId): array
 {
     $statement = $pdo->prepare(
         "SELECT id, status, blocked_reason
-         FROM licencas WHERE company_id = :company_id ORDER BY id DESC LIMIT 1",
+         FROM licencas WHERE company_id = :company_id LIMIT 1",
     );
     $statement->execute(["company_id" => $companyId]);
     $license = $statement->fetch();
@@ -211,7 +230,7 @@ function gerar_token_csrf(): string
 
 function exigir_csrf(): void
 {
-    if (ambiente_atual() !== "production") {
+    if (getenv("TRACE_TESTING_DISABLE_CSRF") === "1") {
         return;
     }
 
@@ -228,48 +247,102 @@ function require_csrf(): void
 
 function verificar_taxa_de_login(string $identidade): void
 {
-    if (ambiente_atual() !== "production") {
+    if (getenv("TRACE_TESTING_DISABLE_LOGIN_RATE_LIMIT") === "1") {
         return;
     }
 
-    $chave = hash(
-        "sha256",
-        ($_SERVER["REMOTE_ADDR"] ?? "unknown") . "|" . strtolower($identidade),
-    );
-    $arquivo = sys_get_temp_dir() . "/dallogix-login-" . $chave . ".json";
-    $handle = fopen($arquivo, "c+");
-    if ($handle === false) {
+    $identityHash = hash("sha256", strtolower(trim($identidade)));
+    $connection = obter_conexao_banco();
+    try {
+        $connection->beginTransaction();
+        $ensure = $connection->prepare(
+            "INSERT INTO limites_login (identity_hash, attempts, window_started_at, blocked_until, violation_count)
+             VALUES (:identity_hash, 0, NOW(), NULL, 0)
+             ON DUPLICATE KEY UPDATE identity_hash = VALUES(identity_hash)",
+        );
+        $ensure->execute(["identity_hash" => $identityHash]);
+
+        $statement = $connection->prepare(
+            "SELECT attempts, window_started_at, blocked_until, violation_count
+             FROM limites_login WHERE identity_hash = :identity_hash LIMIT 1 FOR UPDATE",
+        );
+        $statement->execute(["identity_hash" => $identityHash]);
+        $limit = $statement->fetch();
+        if (!$limit) {
+            throw new RuntimeException("Registro de limite de login não encontrado.");
+        }
+
+        $now = time();
+        $blockedUntil = $limit["blocked_until"] !== null
+            ? strtotime((string) $limit["blocked_until"])
+            : false;
+        if ($blockedUntil !== false && $blockedUntil > $now) {
+            $retryAfter = max(1, $blockedUntil - $now);
+            $connection->commit();
+            header("Retry-After: {$retryAfter}");
+            responder_json(["error" => "Muitas tentativas. Aguarde alguns minutos."], 429);
+        }
+
+        $windowStarted = strtotime((string) $limit["window_started_at"]);
+        $resetWindow = $windowStarted === false || $windowStarted <= $now - 60;
+        $attempts = $resetWindow ? 0 : (int) $limit["attempts"];
+        $attempts++;
+        if ($attempts >= 10) {
+            $violations = (int) $limit["violation_count"] + 1;
+            $blockSeconds = min(900, 60 * (2 ** min(4, $violations - 1)));
+            $blockedUntilValue = (new DateTimeImmutable("now"))
+                ->modify("+{$blockSeconds} seconds")
+                ->format("Y-m-d H:i:s");
+            $update = $connection->prepare(
+                "UPDATE limites_login
+                 SET attempts = 0, window_started_at = NOW(),
+                     blocked_until = :blocked_until,
+                     violation_count = :violation_count
+                 WHERE identity_hash = :identity_hash",
+            );
+            $update->execute([
+                "blocked_until" => $blockedUntilValue,
+                "violation_count" => $violations,
+                "identity_hash" => $identityHash,
+            ]);
+            $connection->commit();
+            header("Retry-After: {$blockSeconds}");
+            responder_json(["error" => "Muitas tentativas. Aguarde alguns minutos."], 429);
+        }
+
+        $update = $connection->prepare(
+            "UPDATE limites_login
+             SET attempts = :attempts, window_started_at = IF(:reset_window = 1, NOW(), window_started_at),
+                 blocked_until = NULL
+             WHERE identity_hash = :identity_hash",
+        );
+        $update->execute([
+            "attempts" => $attempts,
+            "reset_window" => $resetWindow ? 1 : 0,
+            "identity_hash" => $identityHash,
+        ]);
+        $connection->commit();
+    } catch (Throwable $exception) {
+        if ($connection->inTransaction()) {
+            $connection->rollBack();
+        }
+        throw $exception;
+    }
+}
+
+function registrar_login_sucesso(string $identidade): void
+{
+    if (getenv("TRACE_TESTING_DISABLE_LOGIN_RATE_LIMIT") === "1") {
         return;
     }
-
-    flock($handle, LOCK_EX);
-    $conteudo = stream_get_contents($handle);
-    $tentativas = json_decode($conteudo ?: "[]", true);
-    if (!is_array($tentativas)) {
-        $tentativas = [];
-    }
-
-    $agora = time();
-    $tentativas = array_values(
-        array_filter(
-            $tentativas,
-            static fn($timestamp): bool => is_int($timestamp) && $timestamp > $agora - 60,
-        ),
+    $statement = obter_conexao_banco()->prepare(
+        "UPDATE limites_login
+         SET attempts = 0, window_started_at = NOW(), blocked_until = NULL, violation_count = 0
+         WHERE identity_hash = :identity_hash",
     );
-
-    if (count($tentativas) >= 10) {
-        flock($handle, LOCK_UN);
-        fclose($handle);
-        responder_json(["error" => "Muitas tentativas. Aguarde um minuto."], 429);
-    }
-
-    $tentativas[] = $agora;
-    ftruncate($handle, 0);
-    rewind($handle);
-    fwrite($handle, json_encode($tentativas));
-    fflush($handle);
-    flock($handle, LOCK_UN);
-    fclose($handle);
+    $statement->execute([
+        "identity_hash" => hash("sha256", strtolower(trim($identidade))),
+    ]);
 }
 
 function obter_usuario_sessao(): ?array
@@ -279,14 +352,28 @@ function obter_usuario_sessao(): ?array
         : null;
 }
 
-function exigir_sessao_usuario(): array
+function exigir_sessao_usuario(bool $permitirTrocaSenha = false): array
 {
     $usuario = obter_usuario_sessao();
     if ($usuario === null) {
         responder_json(["error" => "Autenticação necessária."], 401);
     }
+    $validatedAt = (int) ($_SESSION["user_validated_at"] ?? 0);
+    $cachedUser = $_SESSION["user"];
+    if ($validatedAt > time() - 30 && is_array($cachedUser)) {
+        if (!$permitirTrocaSenha && !empty($cachedUser["must_change_password"])) {
+            responder_json(
+                [
+                    "error" => "É necessário trocar a senha antes de continuar.",
+                    "code" => "PASSWORD_CHANGE_REQUIRED",
+                ],
+                428,
+            );
+        }
+        return $cachedUser;
+    }
     $consulta = obter_conexao_banco()->prepare(
-        "SELECT id, company_id, name, email, role, active FROM usuarios WHERE id = :id LIMIT 1",
+        "SELECT id, company_id, name, email, role, active, must_change_password FROM usuarios WHERE id = :id LIMIT 1",
     );
     $consulta->execute(["id" => (int) ($usuario["id"] ?? 0)]);
     $usuarioAtual = $consulta->fetch();
@@ -297,6 +384,16 @@ function exigir_sessao_usuario(): array
     }
     $usuarioPublico = usuario_publico($usuarioAtual);
     $_SESSION["user"] = $usuarioPublico;
+    $_SESSION["user_validated_at"] = time();
+    if (!$permitirTrocaSenha && $usuarioPublico["must_change_password"]) {
+        responder_json(
+            [
+                "error" => "É necessário trocar a senha antes de continuar.",
+                "code" => "PASSWORD_CHANGE_REQUIRED",
+            ],
+            428,
+        );
+    }
     return $usuarioPublico;
 }
 
@@ -327,6 +424,7 @@ function usuario_publico(array $usuario): array
         "email" => $usuario["email"],
         "role" => $usuario["role"],
         "company_id" => $usuario["company_id"] === null ? null : (int) $usuario["company_id"],
+        "must_change_password" => (bool) ($usuario["must_change_password"] ?? false),
     ];
 }
 
@@ -338,61 +436,64 @@ function registrar_evento_operacional(
     int $entidadeId,
     array $payload = [],
 ): void {
-    try {
-        $metadata = json_encode(
-            $payload,
-            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
-        );
-        if ($metadata === false) {
-            $metadata = "{}";
-        }
+    // Um administrador da plataforma pode operar sobre uma empresa-alvo. A
+    // empresa do ator continua sendo a fonte principal; no escopo Master, a
+    // operação deve informar company_id no payload para manter a fila isolada.
+    $companyId = filter_var(
+        $usuario["company_id"] ?? $payload["company_id"] ?? null,
+        FILTER_VALIDATE_INT,
+    );
+    if ($companyId === false || $companyId === null || (int) $companyId < 1) {
+        throw new RuntimeException("Evento operacional sem empresa vinculada.");
+    }
 
-        $auditoria = $conexao->prepare(
-            "INSERT INTO logs_auditoria (company_id, user_id, action, entity_type, entity_id, metadata) VALUES (:company_id, :user_id, :action, :entity_type, :entity_id, :metadata)",
-        );
-        $auditoria->execute([
-            "company_id" => $usuario["company_id"] ?? null,
-            "user_id" => $usuario["id"] ?? null,
+    $eventUuid = sprintf(
+        "%s-%s-%s-%s-%s",
+        bin2hex(random_bytes(4)),
+        bin2hex(random_bytes(2)),
+        bin2hex(random_bytes(2)),
+        bin2hex(random_bytes(2)),
+        bin2hex(random_bytes(6)),
+    );
+
+    $metadata = json_encode(
+        $payload,
+        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR,
+    );
+
+    $auditoria = $conexao->prepare(
+        "INSERT INTO logs_auditoria (event_uuid, company_id, user_id, action, entity_type, entity_id, metadata) VALUES (:event_uuid, :company_id, :user_id, :action, :entity_type, :entity_id, :metadata)",
+    );
+    $auditoria->execute([
+        "event_uuid" => $eventUuid,
+        "company_id" => (int) $companyId,
+        "user_id" => $usuario["id"] ?? null,
+        "action" => $acao,
+        "entity_type" => $tipoEntidade,
+        "entity_id" => $entidadeId,
+        "metadata" => $metadata,
+    ]);
+
+    $payloadSincronizacao = json_encode(
+        [
             "action" => $acao,
             "entity_type" => $tipoEntidade,
             "entity_id" => $entidadeId,
-            "metadata" => $metadata,
-        ]);
+            "data" => $payload,
+        ],
+        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR,
+    );
 
-        $eventUuid = sprintf(
-            "%s-%s-%s-%s-%s",
-            bin2hex(random_bytes(4)),
-            bin2hex(random_bytes(2)),
-            bin2hex(random_bytes(2)),
-            bin2hex(random_bytes(2)),
-            bin2hex(random_bytes(6)),
-        );
-
-        $payloadSincronizacao = json_encode(
-            [
-                "action" => $acao,
-                "entity_type" => $tipoEntidade,
-                "entity_id" => $entidadeId,
-                "data" => $payload,
-            ],
-            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
-        );
-        if ($payloadSincronizacao === false) {
-            $payloadSincronizacao = "{}";
-        }
-
-        $fila = $conexao->prepare(
-            "INSERT INTO fila_sincronizacao (event_uuid, aggregate_type, aggregate_id, payload) VALUES (:event_uuid, :aggregate_type, :aggregate_id, :payload)",
-        );
-        $fila->execute([
-            "event_uuid" => $eventUuid,
-            "aggregate_type" => $tipoEntidade,
-            "aggregate_id" => $entidadeId,
-            "payload" => $payloadSincronizacao,
-        ]);
-    } catch (Throwable $exception) {
-        error_log("Operational event could not be recorded: " . $exception->getMessage());
-    }
+    $fila = $conexao->prepare(
+        "INSERT INTO fila_sincronizacao (company_id, event_uuid, aggregate_type, aggregate_id, payload) VALUES (:company_id, :event_uuid, :aggregate_type, :aggregate_id, :payload)",
+    );
+    $fila->execute([
+        "company_id" => (int) $companyId,
+        "event_uuid" => $eventUuid,
+        "aggregate_type" => $tipoEntidade,
+        "aggregate_id" => $entidadeId,
+        "payload" => $payloadSincronizacao,
+    ]);
 }
 
 function record_operational_event(
