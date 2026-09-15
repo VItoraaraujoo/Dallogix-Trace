@@ -68,27 +68,13 @@ export function manifestStatusBadge(row) {
   return badge(row.status);
 }
 
-export function manifestsTable(rows, userRole = "") {
+export function manifestsTable(rows) {
   const list = Array.isArray(rows) ? rows : [];
   const body = list.length
     ? list
         .map((r) => {
-          const operating = r.status === "EM_ANDAMENTO";
-          const canManage = ["ADMIN_EMPRESA", "SUPERVISOR"].includes(userRole);
-          const canEdit = canManage && ["IMPORTADO", "AGUARDANDO"].includes(r.status);
-          const canCancel = canManage && ["IMPORTADO", "AGUARDANDO"].includes(r.status);
           const viewAction = button("Visualizar", "view-manifest", "secondary", `data-id="${r.id}"`);
-          const operation = r.status === "AGUARDANDO"
-            ? button("Iniciar", "prepare-manifest", "primary", `data-id="${r.id}"`)
-            : operating
-              ? button(r.active_state === "PAUSADO" ? "Retomar" : "Abrir operação", "resume-loading", "primary", `data-id="${r.id}" data-loading-id="${r.active_loading_id || ""}"`)
-              : viewAction;
-          const extraActions = [
-            operation === viewAction ? "" : viewAction,
-            canEdit ? `<button class="button secondary small" data-action="edit-manifest" data-id="${r.id}" type="button">Editar</button>` : "",
-            canCancel ? `<button class="button danger small" data-action="cancel-manifest" data-id="${r.id}" type="button">Cancelar</button>` : "",
-          ].join("");
-          const actions = `<div class="manifest-row-actions">${operation}${extraActions ? `<details class="table-action-menu"><summary class="button secondary small">Mais ações</summary><div class="table-action-menu-list">${extraActions}</div></details>` : ""}</div>`;
+          const actions = `<div class="manifest-row-actions">${viewAction}</div>`;
           return `<tr>
           <td data-label="Data do carregamento">${data(r.scheduled_date)}</td>
           <td data-label="Código do romaneio"><strong>${esc(r.number)}</strong></td>
