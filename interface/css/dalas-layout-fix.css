@@ -190,6 +190,13 @@
     }
 }
 
+@media (max-width: 760px) {
+    .dala-actions-menu-list {
+        right: auto;
+        left: 0;
+    }
+}
+
 @media (min-width: 1201px) {
     .dalas-reference-table .dala-reference-actions {
         gap: 10px;
