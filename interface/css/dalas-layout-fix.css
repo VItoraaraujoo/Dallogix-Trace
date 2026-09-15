@@ -24,6 +24,11 @@
     word-break: break-word;
 }
 
+.dalas-reference-table td:first-child,
+.dalas-reference-table td:first-child strong {
+    text-align: center;
+}
+
 .dalas-reference-table-wrap {
     width: 100%;
     max-width: 100%;
