@@ -642,6 +642,22 @@ function bindActions() {
         node.setAttribute("aria-expanded", String(willOpen));
         return;
       }
+      if (action === "toggle-manifest-filters") {
+        const panel = document.querySelector("#manifest-filters-panel");
+        if (!panel) return;
+        const willOpen = panel.hidden;
+        panel.hidden = !willOpen;
+        node.setAttribute("aria-expanded", String(willOpen));
+        return;
+      }
+      if (action === "clear-manifest-date") {
+        const form = document.querySelector("#manifest-filters");
+        const field = form?.elements?.namedItem(node.dataset.field || "");
+        if (!field) return;
+        field.value = "";
+        field.dispatchEvent(new Event("change", { bubbles: true }));
+        return;
+      }
       if (action === "open-company") {
         navigate("company", `?id=${node.dataset.id}&from=${currentPage}`);
         return;
