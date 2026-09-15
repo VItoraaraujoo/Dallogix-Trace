@@ -25,6 +25,15 @@ export function statuses(store = null) {
   const tone = (value) => (["ONLINE", "LOCAL"].includes(value) ? "OK" : value);
   return `<div class="status">${known.map((type) => `<span>● ${labels[type]} <b data-live-status="${type}">${esc(tone(status(type)))}</b></span>`).join("")}</div>`;
 }
+
+export function emergencyPanel({
+  loading = "Aguardando liberação do CLP",
+  canUnlock = false,
+  buttonAttributes = "",
+  compact = false,
+} = {}) {
+  return `<section class="emergency${compact ? " emergency-compact" : ""}" aria-live="assertive"><span class="kicker">Parada de segurança</span><h2>Emergência ativa</h2><p>Contagem bloqueada</p><strong>${esc(loading)}</strong>${canUnlock ? button("Desbloquear máquina", "unlock", "secondary", buttonAttributes) : ""}<small>A liberação do software não substitui a confirmação dos intertravamentos no CLP.</small></section>`;
+}
 export function progress(store) {
   const loaded = Number(store.state.loaded) || 0;
   const planned = Number(store.state.planned) || 0;

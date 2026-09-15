@@ -1,6 +1,6 @@
 import { button, esc } from "../funcoes/html.js";
 import { data, dataHora, numero, relativo } from "../funcoes/formato.js";
-import { manifestStatusBadge, pageHeader, manifestsTable, progress } from "../funcoes/view.js?v=202609150200";
+import { emergencyPanel, manifestStatusBadge, pageHeader, manifestsTable, progress } from "../funcoes/view.js?v=202609150300";
 import { rotuloOcorrencia, rotuloStatusRomaneio, rotuloStatusSincronizacao } from "../funcoes/rotulos.js";
 export function occurrences(store) {
   const recent = store.state.monitoring?.ocorrencias || [];
@@ -125,5 +125,5 @@ export function emergency(store) {
   const loading = store.state.loadingId
     ? `Carregamento #${store.state.loadingId} • romaneio ${esc(store.state.romaneio)} • caminhão ${esc(store.state.truck)}`
     : "Nenhum carregamento ativo identificado.";
-  return `<div class="emergency"><h2>EMERGÊNCIA ATIVA</h2><p>CONTAGEM BLOQUEADA</p><strong>${esc(loading)}</strong><p>Aguardando liberação do CLP</p>${canUnlock ? button("Desbloquear máquina", "unlock", "secondary") : ""}<small>A liberação do software não substitui a confirmação dos intertravamentos no CLP.</small></div>`;
+  return emergencyPanel({ loading, canUnlock });
 }

@@ -16,7 +16,7 @@ import {
     occurrences,
     products,
     summary,
-} from "./telas/monitoramento.js?v=202609150200";
+} from "./telas/monitoramento.js?v=202609150300";
 import {
     division,
     importScreen,
@@ -24,7 +24,7 @@ import {
     manifests,
     manifestView,
     work,
-} from "./telas/operacoes.js?v=202609150200";
+} from "./telas/operacoes.js?v=202609150300";
 import { dashboard } from "./telas/painel.js?v=202609150300";
 import { users } from "./telas/usuarios.js";
 import { atualizarStatusDasDalas, linhaItemRomaneio } from "./controladores/operacao.js";

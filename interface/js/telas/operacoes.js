@@ -4,9 +4,10 @@ import { rotuloEstado, rotuloStatusComando } from "../funcoes/rotulos.js";
 import {
   pageHeader,
   manifestsTable,
+  emergencyPanel,
   progress,
   statuses,
-} from "../funcoes/view.js?v=202609150200";
+} from "../funcoes/view.js?v=202609150300";
 
 const STATUS_OPTIONS = [
   ["", "Todos os status"],
@@ -210,14 +211,18 @@ function workControls(store) {
     canReverse && command
       ? `<li>Reversão <small>${esc(rotuloStatusComando(command.status))}${command.response_message ? ` • ${esc(command.response_message)}` : ""}</small></li>`
       : "";
-  const emergencyPanel = `<div class="emergency"><h2>EMERGÊNCIA ATIVA</h2><p>CONTAGEM BLOQUEADA</p><strong>Aguardando liberação do CLP</strong>${canUnlock ? button("Desbloquear máquina", "unlock", "secondary", bloqueioComando) : ""}</div>`;
+  const activeEmergencyPanel = emergencyPanel({
+    canUnlock,
+    buttonAttributes: bloqueioComando,
+    compact: true,
+  });
   const avisoClp = clpDisponivel
     ? ""
     : `<div class="alert-box" role="alert"><strong>Comandos bloqueados.</strong> ${esc(store.mensagemClpIndisponivel())}</div>`;
   const workTitle = store.state.romaneio && store.state.romaneio !== "—"
     ? `Romaneio #${store.state.romaneio} · ${equipmentLabel(store)}`
     : "Operação";
-  return `${pageHeader(`Operação / ${equipmentLabel(store)}`, workTitle, `Caminhão ${store.state.truck}.`, badge)}${loadingPicker}${statuses(store)}${avisoClp}${manualIdentification}${store.state.emergency ? emergencyPanel : `<div class="grid two"><section class="panel"><span class="kicker">Produto atual</span><h3>Contagem do romaneio</h3><p>Leituras vinculadas ao carregamento atual</p><div class="grid three"><div class="metric"><small>Programado</small><strong data-live="planned">${numero(store.state.planned)}</strong></div><div class="metric work-critical-metric"><small>Carregado</small><strong data-live="loaded">${numero(store.state.loaded)}</strong></div><div class="metric work-critical-metric"><small>Faltam</small><strong data-live="remaining">${numero(left)}</strong></div></div>${progress(store)}${left <= 5 && left > 0 ? '<div class="alert-box">Faltam 5 sacas ou menos. Reduza o envio.</div>' : ""}<div class="actions">${controls}</div></section><aside class="panel"><h3>Estado atual</h3><ul><li>Estado <small data-live="operational-state">${esc(rotuloEstado(store.state.operationalState))}</small></li>${commandPanel}<li>Leituras válidas <small data-live="loaded-secondary">${numero(store.state.loaded)}</small></li><li>Carregamento #${store.state.loadingId || "—"}</li></ul>${summaryAction ? `<div class="actions work-summary-action">${summaryAction}</div>` : ""}</aside></div>`}`;
+  return `${pageHeader(`Operação / ${equipmentLabel(store)}`, workTitle, `Caminhão ${store.state.truck}.`, badge)}${loadingPicker}${statuses(store)}${avisoClp}${manualIdentification}${store.state.emergency ? activeEmergencyPanel : `<div class="grid two"><section class="panel"><span class="kicker">Produto atual</span><h3>Contagem do romaneio</h3><p>Leituras vinculadas ao carregamento atual</p><div class="grid three"><div class="metric"><small>Programado</small><strong data-live="planned">${numero(store.state.planned)}</strong></div><div class="metric work-critical-metric"><small>Carregado</small><strong data-live="loaded">${numero(store.state.loaded)}</strong></div><div class="metric work-critical-metric"><small>Faltam</small><strong data-live="remaining">${numero(left)}</strong></div></div>${progress(store)}${left <= 5 && left > 0 ? '<div class="alert-box">Faltam 5 sacas ou menos. Reduza o envio.</div>' : ""}<div class="actions">${controls}</div></section><aside class="panel"><h3>Estado atual</h3><ul><li>Estado <small data-live="operational-state">${esc(rotuloEstado(store.state.operationalState))}</small></li>${commandPanel}<li>Leituras válidas <small data-live="loaded-secondary">${numero(store.state.loaded)}</small></li><li>Carregamento #${store.state.loadingId || "—"}</li></ul>${summaryAction ? `<div class="actions work-summary-action">${summaryAction}</div>` : ""}</aside></div>`}`;
 }
 export function work(store) {
   if (
