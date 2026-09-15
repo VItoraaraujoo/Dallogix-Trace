@@ -4,7 +4,7 @@ import { el, esc } from "./funcoes/html.js";
 import { numero } from "./funcoes/formato.js";
 import { rotuloEstado } from "./funcoes/rotulos.js";
 import { settings } from "./telas/configuracoes.js?v=202609140210";
-import { dalaActions, dalaEdit, dalas, dalaView } from "./telas/dalas.js?v=202609150300";
+import { dalaActions, dalaEdit, dalas, dalaView } from "./telas/dalas.js?v=202609151730";
 import { company } from "./telas/empresa.js";
 import { companies } from "./telas/empresas.js";
 import { errorLogs } from "./telas/logs.js";
@@ -565,6 +565,12 @@ function bindActions() {
     document.body.dataset.shellInteractionsBound = "1";
     document.addEventListener("keydown", (event) => {
       if (event.key !== "Escape") return;
+      document.querySelectorAll(".dala-actions-menu-list").forEach((item) => {
+        item.hidden = true;
+      });
+      document.querySelectorAll(".dala-actions-menu-trigger").forEach((item) => {
+        item.setAttribute("aria-expanded", "false");
+      });
       const shell = document.querySelector(".shell");
       const toggle = document.querySelector('[data-action="toggle-menu"]');
       if (!shell?.classList.contains("mobile-menu-open")) return;
@@ -619,6 +625,21 @@ function bindActions() {
         } catch (storageError) {
           /* modo privado */
         }
+        return;
+      }
+      if (action === "toggle-dala-actions-menu") {
+        const menu = node.closest(".dala-actions-menu");
+        const list = menu?.querySelector(".dala-actions-menu-list");
+        if (!list) return;
+        const willOpen = list.hidden;
+        document.querySelectorAll(".dala-actions-menu-list").forEach((item) => {
+          item.hidden = true;
+        });
+        document.querySelectorAll(".dala-actions-menu-trigger").forEach((item) => {
+          item.setAttribute("aria-expanded", "false");
+        });
+        list.hidden = !willOpen;
+        node.setAttribute("aria-expanded", String(willOpen));
         return;
       }
       if (action === "open-company") {

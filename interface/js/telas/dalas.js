@@ -7,6 +7,11 @@ function dalaStatusCell(equipment) {
   return `<div class="dala-status" data-equipment-id="${equipment.id}"><span class="status-dot"></span>Verificando…</div>`;
 }
 
+function dalaReferenceActions(equipment, canManage, canDelete) {
+  const directButtons = `<button class="dala-reference-action" data-action="view-dala" data-id="${equipment.id}" type="button">Visualizar</button>${canManage ? `<button class="dala-reference-action" data-action="edit-dala" data-id="${equipment.id}" type="button">Editar</button><button class="dala-reference-action" data-action="dala-actions" data-id="${equipment.id}" type="button">Ações</button>` : ""}${canDelete ? `<button class="dala-reference-action danger" data-action="delete-dala" data-id="${equipment.id}" data-name="${esc(equipment.name)}" type="button">Excluir</button>` : ""}`;
+  return `<div class="dala-reference-actions"><div class="dala-reference-actions-desktop">${directButtons}</div><div class="dala-actions-menu"><button class="dala-reference-action dala-actions-menu-trigger" data-action="toggle-dala-actions-menu" type="button" aria-haspopup="menu" aria-expanded="false">Ações&nbsp;⋯</button><div class="dala-actions-menu-list" role="menu" hidden>${directButtons}</div></div></div>`;
+}
+
 export function dalas(store) {
   const rows = store.state.equipments || [];
   const open = store.state.dalaFormOpen;
@@ -34,7 +39,7 @@ export function dalas(store) {
 <td data-label="Porta do CLP">${esc(equipment.plc_port || "—")}</td>
 <td data-label="Porta Externa">${esc(equipment.external_port || "—")}</td>
 <td data-label="Status">${dalaStatusCell(equipment)}</td>
-<td data-label="Ações"><div class="dala-reference-actions"><button class="dala-reference-action" data-action="view-dala" data-id="${equipment.id}" type="button">Visualizar</button>${canManage ? `<button class="dala-reference-action" data-action="edit-dala" data-id="${equipment.id}" type="button">Editar</button><button class="dala-reference-action" data-action="dala-actions" data-id="${equipment.id}" type="button">Ações</button>` : ""}${canDelete ? `<button class="dala-reference-action danger" data-action="delete-dala" data-id="${equipment.id}" data-name="${esc(equipment.name)}" type="button">Excluir</button>` : ""}</div></td>
+<td data-label="Ações">${dalaReferenceActions(equipment, canManage, canDelete)}</td>
 </tr>`).join("") : '<tr><td colspan="7" class="empty-cell">Nenhuma Dala cadastrada.</td></tr>'}</tbody></table></div></section>`;
 }
 
