@@ -54,17 +54,17 @@
 
     .dalas-reference-table th:nth-child(1),
     .dalas-reference-table td:nth-child(1) {
-        width: 15%;
+        width: 14%;
     }
 
     .dalas-reference-table th:nth-child(2),
     .dalas-reference-table td:nth-child(2) {
-        width: 15%;
+        width: 13%;
     }
 
     .dalas-reference-table th:nth-child(3),
     .dalas-reference-table td:nth-child(3) {
-        width: 13%;
+        width: 12%;
         white-space: nowrap;
     }
 
@@ -82,12 +82,12 @@
 
     .dalas-reference-table th:nth-child(6),
     .dalas-reference-table td:nth-child(6) {
-        width: 14%;
+        width: 13%;
     }
 
     .dalas-reference-table th:nth-child(7),
     .dalas-reference-table td:nth-child(7) {
-        width: 25%;
+        width: 30%;
     }
 
     .dala-reference-actions {
