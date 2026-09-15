@@ -28,6 +28,7 @@ export class ArmazenamentoTrace {
       equipmentsLoaded: false,
       equipmentsLoading: false,
       equipmentsError: "",
+      dalaStatuses: [],
       companies: [],
       companyDetail: null,
       selectedCompanyId: null,
@@ -228,6 +229,14 @@ export class ArmazenamentoTrace {
         message: result.error || "Falha na verificação.",
       };
     return result.data;
+  }
+  async loadDalaStatuses() {
+    const response = await fetch("/api/status_dalas.php");
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok)
+      throw new Error(result.error || "Não foi possível carregar o status das Dalas.");
+    this.state.dalaStatuses = Array.isArray(result.data) ? result.data : [];
+    return this.state.dalaStatuses;
   }
   async loadDalaCommandHistory(id) {
     const response = await fetch(`/api/comandos_industriais.php?equipment_id=${encodeURIComponent(id)}`);

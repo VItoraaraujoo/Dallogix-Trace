@@ -319,6 +319,13 @@ function installLocalIndicator() {
   localHealthTimer = window.setInterval(refreshLocalIndicator, 30000);
 }
 
+function installOfflineShell() {
+  if (!("serviceWorker" in navigator) || window.location.protocol === "file:") return;
+  navigator.serviceWorker.register("/service-worker.js").catch(() => {
+    // A aplicação continua funcional quando o navegador não oferece suporte ao cache offline.
+  });
+}
+
 function renderLogin(message = "") {
   const box = el("#login-error");
   if (box) {
@@ -1890,6 +1897,7 @@ async function renderPage() {
 
 async function bootstrap() {
   installInteractionGuards();
+  installOfflineShell();
   currentPage = initialPage || pageFromPath();
   if (currentPage === "login") {
     if (window.location.search)
