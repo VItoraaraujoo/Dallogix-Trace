@@ -1,5 +1,27 @@
 .dalas-reference-table td {
     line-height: 1.35;
+    box-sizing: border-box;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.dalas-reference-table {
+    width: 100%;
+    table-layout: fixed;
+}
+
+.dalas-reference-table th,
+.dalas-reference-table td {
+    box-sizing: border-box;
+}
+
+.dalas-reference-table td strong,
+.dalas-reference-table td code {
+    display: block;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .dalas-reference-table-wrap {
@@ -27,17 +49,17 @@
 
     .dalas-reference-table th:nth-child(1),
     .dalas-reference-table td:nth-child(1) {
-        width: 14%;
+        width: 17%;
     }
 
     .dalas-reference-table th:nth-child(2),
     .dalas-reference-table td:nth-child(2) {
-        width: 14%;
+        width: 18%;
     }
 
     .dalas-reference-table th:nth-child(3),
     .dalas-reference-table td:nth-child(3) {
-        width: 11%;
+        width: 13%;
         white-space: nowrap;
     }
 
@@ -45,18 +67,18 @@
     .dalas-reference-table td:nth-child(4),
     .dalas-reference-table th:nth-child(5),
     .dalas-reference-table td:nth-child(5) {
-        width: 9%;
+        width: 8%;
         white-space: nowrap;
     }
 
     .dalas-reference-table th:nth-child(6),
     .dalas-reference-table td:nth-child(6) {
-        width: 15%;
+        width: 17%;
     }
 
     .dalas-reference-table th:nth-child(7),
     .dalas-reference-table td:nth-child(7) {
-        width: 28%;
+        width: 19%;
     }
 
     .dala-reference-actions {
