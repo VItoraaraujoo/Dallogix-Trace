@@ -7,7 +7,7 @@ import {
   emergencyPanel,
   progress,
   statuses,
-} from "../funcoes/view.js?v=202609150300";
+} from "../funcoes/view.js?v=202609151955";
 
 const STATUS_OPTIONS = [
   ["", "Todos os status"],
