@@ -25,12 +25,13 @@ jobs:
           install -d -m 700 "$HOME/.ssh"
           # GitHub's textarea can preserve CRLF or receive only the Base64 body.
           # Normalize both forms before handing the key to OpenSSH.
-          if printf '%s' "$DEPLOY_KEY" | grep -q -- 'BEGIN OPENSSH PRIVATE KEY'; then
-            printf '%s\n' "$DEPLOY_KEY" | tr -d '\r' > "$HOME/.ssh/id_ed25519"
+          NORMALIZED_KEY=$(printf '%s\n' "$DEPLOY_KEY" | sed -E 's/^\\+//' | tr -d '\r')
+          if printf '%s' "$NORMALIZED_KEY" | grep -q -- 'BEGIN OPENSSH PRIVATE KEY'; then
+            printf '%s\n' "$NORMALIZED_KEY" > "$HOME/.ssh/id_ed25519"
           else
             {
               printf '%s\n' '-----BEGIN OPENSSH PRIVATE KEY-----'
-              printf '%s\n' "$DEPLOY_KEY" | tr -d '\r\n '
+              printf '%s\n' "$NORMALIZED_KEY" | tr -d '\n '
               printf '%s\n' '-----END OPENSSH PRIVATE KEY-----'
             } > "$HOME/.ssh/id_ed25519"
           fi
