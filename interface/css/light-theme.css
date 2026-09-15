@@ -5849,6 +5849,91 @@ body.mobile-menu-open {
   color: #69808f !important;
 }
 
+/* Dashboard: preserve the existing light palette while making loading and
+   urgency visible before the operational data arrives. */
+.dala-album-grid.is-loading {
+  align-items: stretch;
+}
+
+.dala-album-card-skeleton {
+  min-height: 236px;
+  pointer-events: none;
+}
+
+.dala-album-card-skeleton .skeleton-line,
+.dala-album-card-skeleton .skeleton-badge,
+.dala-album-card-skeleton .skeleton-progress,
+.dala-album-card-skeleton .skeleton-button {
+  display: block;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #edf3f6 25%, #f7fafb 50%, #edf3f6 75%);
+  background-size: 200% 100%;
+  animation: trace-skeleton-shimmer 1.35s ease-in-out infinite;
+}
+
+.dala-album-card-skeleton .skeleton-label {
+  width: 56px;
+  height: 10px;
+  margin-bottom: 10px;
+}
+
+.dala-album-card-skeleton .skeleton-title {
+  width: min(180px, 70%);
+  height: 22px;
+  margin-bottom: 8px;
+}
+
+.dala-album-card-skeleton .skeleton-code {
+  width: 112px;
+  height: 12px;
+}
+
+.dala-album-card-skeleton .skeleton-badge {
+  width: 78px;
+  height: 28px;
+  border-radius: 999px;
+}
+
+.dala-album-card-skeleton .dala-album-info {
+  gap: 14px;
+}
+
+.dala-album-card-skeleton .dala-album-info > div {
+  min-width: 0;
+}
+
+.dala-album-card-skeleton .dala-album-info .skeleton-line:first-child {
+  width: 58px;
+  height: 10px;
+  margin-bottom: 7px;
+}
+
+.dala-album-card-skeleton .skeleton-value {
+  width: 76px;
+  height: 16px;
+}
+
+.dala-album-card-skeleton .skeleton-progress {
+  width: 100%;
+  height: 8px;
+  margin-top: 18px;
+}
+
+.dala-album-card-skeleton .skeleton-footer {
+  width: 92px;
+  height: 12px;
+}
+
+.dala-album-card-skeleton .skeleton-button {
+  width: 142px;
+  height: 34px;
+}
+
+@keyframes trace-skeleton-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
 @media (max-width: 1200px) and (min-width: 761px) {
 
   .dalas-reference-table th,

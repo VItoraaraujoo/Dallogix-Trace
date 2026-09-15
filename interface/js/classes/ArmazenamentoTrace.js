@@ -25,6 +25,9 @@ export class ArmazenamentoTrace {
       userRole: null,
       configuration: null,
       equipments: [],
+      equipmentsLoaded: false,
+      equipmentsLoading: false,
+      equipmentsError: "",
       companies: [],
       companyDetail: null,
       selectedCompanyId: null,
@@ -553,8 +556,27 @@ export class ArmazenamentoTrace {
     if (response.ok) this.state.configuration = (await response.json()).data;
   }
   async loadEquipments() {
-    const response = await fetch("/api/equipamentos.php");
-    if (response.ok) this.state.equipments = (await response.json()).data;
+    if (this.state.equipmentsLoading) return this.state.equipments;
+    this.state.equipmentsLoading = true;
+    this.state.equipmentsError = "";
+    try {
+      const response = await fetch("/api/equipamentos.php");
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        this.state.equipmentsError =
+          result.error || "Não foi possível carregar as Dalas.";
+        return this.state.equipments;
+      }
+      this.state.equipments = Array.isArray(result.data) ? result.data : [];
+      return this.state.equipments;
+    } catch (error) {
+      this.state.equipmentsError =
+        error.message || "Não foi possível carregar as Dalas.";
+      return this.state.equipments;
+    } finally {
+      this.state.equipmentsLoaded = true;
+      this.state.equipmentsLoading = false;
+    }
   }
   async loadCompanies() {
     const response = await fetch("/api/empresas.php");

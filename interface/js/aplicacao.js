@@ -25,7 +25,7 @@ import {
     manifestView,
     work,
 } from "./telas/operacoes.js?v=202609150200";
-import { dashboard } from "./telas/painel.js?v=202609150200";
+import { dashboard } from "./telas/painel.js?v=202609150300";
 import { users } from "./telas/usuarios.js";
 import { atualizarStatusDasDalas, linhaItemRomaneio } from "./controladores/operacao.js";
 

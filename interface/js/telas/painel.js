@@ -1,7 +1,7 @@
 import { button, esc } from "../funcoes/html.js";
 import { numero, relativo } from "../funcoes/formato.js";
 import { rotuloEstado } from "../funcoes/rotulos.js";
-import { deviceBadge, pageHeader } from "../funcoes/view.js?v=202609150020";
+import { deviceBadge, pageHeader } from "../funcoes/view.js?v=202609150300";
 
 function dalaAlbumCard(equipment, machines, role) {
   const machine =
@@ -37,13 +37,46 @@ function dalaAlbumCard(equipment, machines, role) {
   </article>`;
 }
 
+function dalaSkeletonCard() {
+  return `<article class="dala-album-card dala-album-card-skeleton" aria-hidden="true">
+    <header><div><span class="skeleton-line skeleton-label"></span><span class="skeleton-line skeleton-title"></span><span class="skeleton-line skeleton-code"></span></div><span class="skeleton-badge"></span></header>
+    <div class="dala-album-info"><div><span class="skeleton-line"></span><span class="skeleton-line skeleton-value"></span></div><div><span class="skeleton-line"></span><span class="skeleton-line skeleton-value"></span></div><div><span class="skeleton-line"></span><span class="skeleton-line skeleton-value"></span></div><div><span class="skeleton-line"></span><span class="skeleton-line skeleton-value"></span></div></div>
+    <div class="skeleton-progress"></div><footer><span class="skeleton-line skeleton-footer"></span><span class="skeleton-button"></span></footer>
+  </article>`;
+}
+
+function dashboardEquipmentPriority(equipment, machines) {
+  const machine = machines.find((item) => Number(item.id) === Number(equipment.id)) || {};
+  const status = String(machine.clp_status || "").toUpperCase();
+  const state = String(machine.carregamento_state || "").toUpperCase();
+  const offline = status && status !== "ONLINE";
+  const emergency = state.includes("EMERGEN") || machine.emergency === true;
+  const active = Boolean(machine.carregamento_id);
+  return (offline ? 100 : 0) + (emergency ? 50 : 0) + (active ? 10 : 0);
+}
+
 // Dashboard no padrão da referência TracePlatform: somente informações das Dalas.
 export function dashboard(store) {
   const equipments = store.state.equipments || [];
   const machines = store.state.monitoring?.maquinas || [];
   const canManageDalas = store.state.userRole === "ADMIN_EMPRESA";
+  const loading = !store.state.equipmentsLoaded;
+  const sortedEquipments = [...equipments].sort(
+    (left, right) =>
+      dashboardEquipmentPriority(right, machines) -
+      dashboardEquipmentPriority(left, machines),
+  );
+  const content = loading
+    ? `${dalaSkeletonCard()}${dalaSkeletonCard()}${dalaSkeletonCard()}`
+    : store.state.equipmentsError
+      ? `<div class="panel page-error"><p>${esc(store.state.equipmentsError)}</p><button class="button secondary" data-action="reload-page" type="button">Tentar novamente</button></div>`
+      : sortedEquipments.length
+        ? sortedEquipments
+            .map((equipment) => dalaAlbumCard(equipment, machines, store.state.userRole))
+            .join("")
+        : '<div class="panel placeholder-panel"><p>Nenhuma Dala cadastrada para esta empresa.</p></div>';
   return `${pageHeader("Esteiras e romaneios", "Operação por Dala", "Estado e progresso de cada operação em andamento.", canManageDalas ? button("Gerenciar Dalas", "goto-dalas", "secondary") : "")}
   <section class="dashboard-dalas">
-    <div class="dala-album-grid">${equipments.length ? equipments.map((equipment) => dalaAlbumCard(equipment, machines, store.state.userRole)).join("") : '<div class="panel placeholder-panel"><p>Nenhuma Dala cadastrada para esta empresa.</p></div>'}</div>
+    <div class="dala-album-grid ${loading ? "is-loading" : ""}">${content}</div>
   </section>`;
 }
