@@ -4,7 +4,7 @@ set -u
 root="$(cd "$(dirname "$0")/.." && pwd)"
 fail() { echo "FAIL: $1"; exit 1; }
 
-grep -q 'configuracoes_empresa' "$root/servidor/api/sync_queue.php" || fail "retry não usa URL salva nas configurações"
+grep -q 'configuracoes_empresa' "$root/servidor/src/Aplicacao/ServicoSincronizacao.php" || fail "retry não usa URL salva nas configurações"
 grep -q 'WEB_BIND_ADDRESS=127.0.0.1' "$root/.env.example" || fail "interface local ainda exposta por padrão"
 ! test -e "$root/interface/tablet.html" || fail "tela tablet removida ainda existe"
 ! grep -q 'tabletTimer\|export function tablet' "$root/interface/js/aplicacao.js" "$root/interface/js/telas/monitoramento.js" || fail "referência à tela tablet ainda existe"
