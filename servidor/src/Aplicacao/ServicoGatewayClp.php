@@ -175,6 +175,17 @@ final class ServicoGatewayClp
 
             $stateChanged = false;
             if ($status === "APLICADO" && $request["command"] === "DESBLOQUEAR_MAQUINA") {
+                $latest = $this->connection->prepare(
+                    "SELECT id FROM solicitacoes_comandos_clp
+                     WHERE carregamento_id = :carregamento_id AND command = 'DESBLOQUEAR_MAQUINA'
+                     ORDER BY id DESC LIMIT 1",
+                );
+                $latest->execute(["carregamento_id" => $request["carregamento_id"]]);
+                // Um ACK antigo nunca pode liberar uma emergência mais recente.
+                if ((int) $latest->fetchColumn() !== $requestId) {
+                    $this->connection->commit();
+                    return ["request_id" => $requestId, "command" => $request["command"], "status" => $status, "state_changed" => false, "stale" => true];
+                }
                 $loading = $this->connection->prepare(
                     "UPDATE carregamentos SET state = 'PREPARANDO'
                      WHERE id = :id AND company_id = :company_id AND state = 'EMERGENCIA'",

@@ -29,6 +29,9 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     responder_json(["error" => "Método não permitido."], 405);
 }
+if (is_file(dirname(__DIR__, 2) . "/armazenamento/.maintenance")) {
+    responder_json(["error" => "Atualização do sistema em andamento; tente preparar o carregamento novamente em instantes."], 503);
+}
 exigir_csrf();
 if (!in_array($usuarioAtor["role"], ["ADMIN_EMPRESA", "SUPERVISOR"], true)) {
     responder_json(

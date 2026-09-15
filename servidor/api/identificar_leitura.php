@@ -17,17 +17,21 @@ if (!$readingId || ($barcode === "" && !$productId)) {
 }
 
 $pdo = db();
+$pdo->beginTransaction();
+try {
 $reading = $pdo->prepare(
     "SELECT l.id, l.carregamento_id, l.result, c.romaneio_id, c.truck_id
      FROM leituras l JOIN carregamentos c ON c.id = l.carregamento_id
-     WHERE l.id = :id AND c.company_id = :company_id LIMIT 1",
+     WHERE l.id = :id AND c.company_id = :company_id LIMIT 1 FOR UPDATE",
 );
 $reading->execute(["id" => $readingId, "company_id" => $user["company_id"]]);
 $current = $reading->fetch();
 if (!$current) {
+    $pdo->rollBack();
     json_response(["error" => "Leitura não encontrada."], 404);
 }
 if ($current["result"] !== "SEM_LEITURA") {
+    $pdo->rollBack();
     json_response(["error" => "Somente leituras sem código podem ser identificadas."], 409);
 }
 
@@ -40,6 +44,7 @@ if ($productId) {
 }
 $selected = $product->fetch();
 if (!$selected) {
+    $pdo->rollBack();
     json_response(["error" => "Produto não encontrado ou inativo."], 422);
 }
 $expected = $pdo->prepare("SELECT 1 FROM romaneio_itens WHERE romaneio_id = :romaneio_id AND product_id = :product_id AND (truck_id = :truck_id OR truck_id IS NULL) LIMIT 1");
@@ -56,5 +61,18 @@ $update->execute([
     "result" => $result,
     "id" => $readingId,
 ]);
+if ($result === "VALIDO") {
+    // A leitura manual passa a compor o mesmo contador usado pelo scanner.
+    // Como a linha foi bloqueada e só SEM_LEITURA é aceita, o incremento ocorre uma única vez.
+    $counter = $pdo->prepare("UPDATE carregamentos SET leituras_validas = leituras_validas + 1 WHERE id = :id");
+    $counter->execute(["id" => (int) $current["carregamento_id"]]);
+}
 record_operational_event($pdo, $user, "LEITURA_IDENTIFICADA_MANUALMENTE", "leitura", (int) $readingId, ["product_id" => (int) $selected["id"], "result" => $result]);
+$pdo->commit();
 json_response(["data" => ["id" => (int) $readingId, "result" => $result, "product_id" => (int) $selected["id"], "product_name" => $selected["name"]]]);
+} catch (Throwable $exception) {
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+    throw $exception;
+}

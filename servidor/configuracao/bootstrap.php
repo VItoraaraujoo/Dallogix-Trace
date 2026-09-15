@@ -489,7 +489,9 @@ function registrar_evento_operacional(
         $usuario["company_id"] ?? $payload["company_id"] ?? null,
         FILTER_VALIDATE_INT,
     );
-    if ($companyId === false || $companyId === null || (int) $companyId < 1) {
+    $platformEvent = ($companyId === false || $companyId === null || (int) $companyId < 1)
+        && ($usuario["role"] ?? "") === "ADMIN_DALLOGIX";
+    if (!$platformEvent && ($companyId === false || $companyId === null || (int) $companyId < 1)) {
         throw new RuntimeException("Evento operacional sem empresa vinculada.");
     }
 
@@ -512,7 +514,7 @@ function registrar_evento_operacional(
     );
     $auditoria->execute([
         "event_uuid" => $eventUuid,
-        "company_id" => (int) $companyId,
+        "company_id" => $platformEvent ? null : (int) $companyId,
         "user_id" => $usuario["id"] ?? null,
         "action" => $acao,
         "entity_type" => $tipoEntidade,
@@ -530,6 +532,11 @@ function registrar_evento_operacional(
         JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR,
     );
 
+    if ($platformEvent) {
+        // Eventos do administrador da plataforma não pertencem a uma empresa
+        // e, portanto, não entram na fila de sincronização multiempresa.
+        return;
+    }
     $fila = $conexao->prepare(
         "INSERT INTO fila_sincronizacao (company_id, event_uuid, aggregate_type, aggregate_id, payload) VALUES (:company_id, :event_uuid, :aggregate_type, :aggregate_id, :payload)",
     );

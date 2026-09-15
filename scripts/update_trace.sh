@@ -30,6 +30,7 @@ command -v rsync >/dev/null || { echo "rsync é necessário para uma instalaçã
 
 state_dir="$root_dir/armazenamento/updates"
 mkdir -p "$state_dir/releases" "$state_dir/backups"
+maintenance_file="$root_dir/armazenamento/.maintenance"
 lock_dir="$state_dir/.install.lock"
 if ! mkdir "$lock_dir" 2>/dev/null; then
   echo "Já existe uma atualização em execução." >&2
@@ -37,6 +38,7 @@ if ! mkdir "$lock_dir" 2>/dev/null; then
 fi
 cleanup() {
   rmdir "$lock_dir" 2>/dev/null || true
+  rm -f -- "$maintenance_file"
   if [[ -n "${work_dir:-}" ]]; then rm -rf -- "$work_dir"; fi
 }
 trap cleanup EXIT
@@ -85,6 +87,9 @@ openssl dgst -sha256 -verify "$public_key" -signature "$work_dir/signature.bin" 
 }
 
 mysql_user="${MYSQL_USER:-trace}"
+# Bloqueia novas preparações antes de consultar cargas ativas; o endpoint de
+# preparação consulta este marcador dentro da mesma instalação.
+touch "$maintenance_file"
 active="$(docker compose exec -T mysql mysql -N -B -u"$mysql_user" -p"${MYSQL_PASSWORD:-change-me-local}" "${MYSQL_DATABASE:-trace_local}" -e "SELECT COUNT(*) FROM carregamentos WHERE state IN ('PREPARANDO','CARREGANDO','PAUSADO','FINALIZANDO','EMERGENCIA');" 2>/dev/null | tr -d '[:space:]')" || {
   echo "Não foi possível verificar o estado do carregamento; atualização cancelada por segurança." >&2
   exit 12

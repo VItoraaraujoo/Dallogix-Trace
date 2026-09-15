@@ -99,6 +99,11 @@ try {
         $pdo->rollBack();
         json_response(["error" => "Pedido de captura não está reservado por este dispositivo."], 404);
     }
+    $requiredPrefix = "company_" . (int) $capture["company_id"] . "/equipment_" . (int) $capture["equipment_id"] . "/";
+    if (ambiente_atual() === "production" && !str_starts_with($imagePath, $requiredPrefix)) {
+        $pdo->rollBack();
+        json_response(["error" => "image_path deve pertencer à empresa e ao equipamento da captura."], 422);
+    }
     $update = $pdo->prepare(
         "UPDATE solicitacoes_captura_camera
          SET status = 'CAPTURADA', captured_at = NOW(3), image_path = :image_path, error_message = NULL

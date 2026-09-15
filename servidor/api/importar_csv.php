@@ -90,9 +90,16 @@ try {
         );
         $driverName = trim((string) ($row[$index["motorista"]] ?? ""));
         $shipper = trim((string) ($row[$index["expedidor"]] ?? ""));
-        $date =
-            DateTime::createFromFormat("Y-m-d", $dateValue) ?:
-            DateTime::createFromFormat("d/m/Y", $dateValue);
+        $date = null;
+        foreach (["Y-m-d", "d/m/Y"] as $format) {
+            $candidate = DateTime::createFromFormat("!{$format}", $dateValue);
+            $errors = DateTime::getLastErrors();
+            $hasErrors = is_array($errors) && ($errors["warning_count"] > 0 || $errors["error_count"] > 0);
+            if ($candidate && !$hasErrors && $candidate->format($format) === $dateValue) {
+                $date = $candidate;
+                break;
+            }
+        }
         if ($date) {
             $dateValue = $date->format("Y-m-d");
         }
@@ -174,7 +181,6 @@ try {
         }
         $created++;
     }
-    $pdo->commit();
     foreach ($romaneioIds as $number => $romaneioId) {
         record_operational_event(
             $pdo,
@@ -185,6 +191,8 @@ try {
             ["number" => $number, "items" => $created],
         );
     }
+    // Registros, auditoria e fila local-first precisam ser atômicos.
+    $pdo->commit();
     json_response(
         [
             "data" => [

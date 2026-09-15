@@ -105,7 +105,7 @@ try {
     $registerDivergence = $pdo->prepare("INSERT INTO ocorrencias (company_id, carregamento_id, product_id, reference_key, type, quantity, description, created_by)
         VALUES (:company_id, :carregamento_id, :product_id, :reference_key, 'DIVERGENCIA_FINAL', :quantity, :description, :created_by)
         ON DUPLICATE KEY UPDATE quantity = VALUES(quantity), description = VALUES(description)");
-    foreach ($divergences->fetchAll() as $divergence) {
+    foreach ($divergenceRows as $divergence) {
         $planned = (int) $divergence["planned_quantity"];
         $moved = (int) $divergence["moved_quantity"];
         if ($planned === $moved) {

@@ -2,8 +2,9 @@ $ErrorActionPreference = "Stop"
 
 # Atualizador nativo do PC Windows. Deve rodar por tarefa técnica, nunca pela
 # conta restrita do operador.
-$InstallRoot = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
+$InstallRoot = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path))
 $StateRoot = Join-Path $InstallRoot "armazenamento\updates"
+$MaintenanceFile = Join-Path $InstallRoot "armazenamento\.maintenance"
 $EnvPath = Join-Path $InstallRoot ".env"
 if (Test-Path $EnvPath) {
     Get-Content $EnvPath | Where-Object { $_ -match '^\s*([A-Za-z_][A-Za-z0-9_]*)=(.*)$' } | ForEach-Object {
@@ -19,6 +20,7 @@ if ($ManifestUrl -notmatch '^https://') { throw "O manifesto deve usar HTTPS." }
 if (-not (Test-Path $PublicKey)) { throw "Chave pública não encontrada: $PublicKey" }
 if (-not (Get-Command docker.exe -ErrorAction SilentlyContinue)) { throw "Docker Desktop não está disponível." }
 if (-not (Get-Command openssl.exe -ErrorAction SilentlyContinue)) { throw "openssl.exe é necessário para validar a assinatura." }
+if (-not (Get-Command tar.exe -ErrorAction SilentlyContinue)) { throw "tar.exe é necessário para extrair o pacote." }
 
 New-Item -ItemType Directory -Force -Path (Join-Path $StateRoot "releases"), (Join-Path $StateRoot "backups") | Out-Null
 $Lock = Join-Path $StateRoot ".install.lock"
@@ -45,17 +47,21 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "Assinatura do pacote rejeitada." }
 
     Set-Location $InstallRoot
+    New-Item -ItemType File -Force -Path $MaintenanceFile | Out-Null
     $active = (& docker.exe compose exec -T mysql mysql -N -B -utrace "-p$($env:MYSQL_PASSWORD)" "$($env:MYSQL_DATABASE)" -e "SELECT COUNT(*) FROM carregamentos WHERE state IN ('PREPARANDO','CARREGANDO','PAUSADO','FINALIZANDO','EMERGENCIA');" 2>$null | Out-String).Trim()
     if ($active -and $active -ne "0") { throw "Atualização adiada: existe carregamento ativo ou em intervenção." }
     $current = Join-Path $StateRoot "current_version"
     if ((Test-Path $current) -and ((Get-Content $current -Raw).Trim() -eq $manifest.version)) { Write-Output "Trace já está na versão $($manifest.version)."; return }
 
-    $artifact = Join-Path $work ("trace-" + $manifest.version + ".zip")
+    # O workflow de release publica tar.gz (o formato é o mesmo usado pelo
+    # atualizador Linux); não tente abrir esses bytes como ZIP.
+    $artifact = Join-Path $work ("trace-" + $manifest.version + ".tar.gz")
     Invoke-WebRequest -Uri $manifest.artifact_url -Headers $headers -OutFile $artifact -TimeoutSec 120
     if ((Get-FileHash $artifact -Algorithm SHA256).Hash.ToLower() -ne $manifest.sha256.ToLower()) { throw "Integridade do pacote rejeitada." }
     $release = Join-Path $StateRoot ("releases\" + $manifest.version)
     if (Test-Path $release) { Remove-Item $release -Recurse -Force }
-    Expand-Archive -Path $artifact -DestinationPath $release -Force
+    & tar.exe -xzf $artifact -C $release
+    if ($LASTEXITCODE -ne 0) { throw "Não foi possível extrair o pacote." }
     $source = if (Test-Path (Join-Path $release "trace\docker-compose.yml")) { Join-Path $release "trace" } else { $release }
     if (-not (Test-Path (Join-Path $source "docker-compose.yml"))) { throw "Pacote sem docker-compose.yml." }
 
@@ -73,4 +79,5 @@ try {
     Write-Output "Trace atualizado com sucesso para $($manifest.version). Backup: $backup"
 } finally {
     if (Test-Path $Lock) { Remove-Item $Lock -Recurse -Force }
+    if (Test-Path $MaintenanceFile) { Remove-Item $MaintenanceFile -Force }
 }

@@ -25,7 +25,9 @@ final class ServicoEstadoCarregamento
         "CARREGANDO" => ["PAUSADO", "FINALIZANDO", "EMERGENCIA"],
         "PAUSADO" => ["CARREGANDO", "EMERGENCIA"],
         "FINALIZANDO" => ["EMERGENCIA"],
-        "EMERGENCIA" => ["PREPARANDO"],
+        // A saída da emergência só pode ocorrer após ACK do gateway industrial.
+        // O endpoint genérico não deve permitir que um usuário contorne esse fluxo.
+        "EMERGENCIA" => [],
         "FINALIZADO" => [],
     ];
 
@@ -68,14 +70,6 @@ final class ServicoEstadoCarregamento
                     409,
                 );
             }
-            if (
-                $current["state"] === "EMERGENCIA" &&
-                $target === "PREPARANDO" &&
-                $user["role"] === "USUARIO"
-            ) {
-                throw new ExcecaoEstadoCarregamento("Usuário não pode liberar uma emergência.", 403);
-            }
-
             if (in_array($target, ["CARREGANDO", "PAUSADO"], true)) {
                 (new ServicoDisponibilidadeClp($this->connection))->validarComando(
                     (int) $user["company_id"],

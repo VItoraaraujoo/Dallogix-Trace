@@ -57,15 +57,22 @@ function pdf_extract_text(string $binary): string
     $maxInflatedStreamBytes = 4 * 1024 * 1024;
     $maxInflatedTotalBytes = 16 * 1024 * 1024;
     $text = "";
-    $matches = preg_match_all(
-        '/stream\r?\n(.{0,4194304}?)\r?\nendstream/s',
-        $binary,
-        $streams,
-    );
-    if ($matches === false) {
-        throw new RuntimeException("Não foi possível analisar os streams do PDF.");
+    $streams = [1 => []];
+    $offset = 0;
+    while (preg_match('/stream\r?\n/s', $binary, $marker, PREG_OFFSET_CAPTURE, $offset) === 1) {
+        $start = $marker[0][1] + strlen($marker[0][0]);
+        $end = strpos($binary, "endstream", $start);
+        if ($end === false) {
+            break;
+        }
+        $length = $end - $start;
+        if ($length > $maxInflatedStreamBytes) {
+            throw new RuntimeException("Stream do PDF excede o limite permitido.");
+        }
+        $streams[1][] = rtrim(substr($binary, $start, $length), "\r\n");
+        $offset = $end + strlen("endstream");
     }
-    if ($matches === 0) {
+    if ($streams[1] === []) {
         return "";
     }
     $inflatedTotal = 0;
@@ -73,7 +80,15 @@ function pdf_extract_text(string $binary): string
         if (strlen($stream) > $maxInflatedStreamBytes) {
             throw new RuntimeException("Stream do PDF excede o limite permitido.");
         }
-        $inflated = @gzinflate($stream, $maxInflatedStreamBytes);
+        // PDFs FlateDecode normalmente carregam zlib completo; aceite também
+        // o formato raw usado por alguns geradores.
+        $inflated = @gzuncompress($stream, $maxInflatedStreamBytes);
+        if ($inflated === false) {
+            $inflated = @gzinflate($stream, $maxInflatedStreamBytes);
+        }
+        if ($inflated === false) {
+            $inflated = @gzuncompress(rtrim($stream, "\r\n"), $maxInflatedStreamBytes);
+        }
         if ($inflated === false) {
             $inflated = @gzinflate(rtrim($stream, "\r\n"), $maxInflatedStreamBytes);
         }
@@ -98,7 +113,8 @@ function pdf_extract_text(string $binary): string
  */
 function pdf_normalize(string $value): string
 {
-    $value = preg_replace("/\s+/u", " ", $value) ?? $value;
+    // Preserve quebras de linha: pdf_field_value usa cada linha para separar rótulo e valor.
+    $value = preg_replace("/[ \t]+/u", " ", $value) ?? $value;
     $transliterated = iconv("UTF-8", "ASCII//TRANSLIT//IGNORE", $value);
     if ($transliterated !== false) {
         $value = $transliterated;

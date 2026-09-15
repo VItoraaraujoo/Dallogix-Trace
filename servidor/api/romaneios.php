@@ -204,7 +204,7 @@ if ($_SERVER["REQUEST_METHOD"] === "PATCH") {
         $driverName = trim((string) ($payload["driver_name"] ?? ""));
         $expedidor = trim((string) ($payload["expedidor"] ?? ""));
 
-        if (!$romaneioId || $number === "" || $plate === "") {
+        if (!$romaneioId || $number === "" || $plate === "" || mb_strlen($number) > 80 || !preg_match('/^[A-Za-z0-9À-ÿ _.,\/-]{1,80}$/u', $number)) {
             responder_json(["error" => "Romaneio, código e placa são obrigatórios."], 422);
         }
 
@@ -379,7 +379,7 @@ $plate = strtoupper(trim((string) ($payload["plate"] ?? "")));
 $driverName = trim((string) ($payload["driver_name"] ?? ""));
 $expedidor = trim((string) ($payload["expedidor"] ?? ""));
 
-if ($number === "" || $plate === "") {
+if ($number === "" || $plate === "" || mb_strlen($number) > 80 || !preg_match('/^[A-Za-z0-9À-ÿ _.,\/-]{1,80}$/u', $number)) {
     responder_json(["error" => "Número e placa do caminhão são obrigatórios."], 422);
 }
 

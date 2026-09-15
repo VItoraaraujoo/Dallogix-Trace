@@ -19,6 +19,9 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     json_response(["error" => "Método não permitido."], 405);
 }
+if (ambiente_atual() === "production") {
+    json_response(["error" => "Use o heartbeat autenticado do dispositivo para atualizar status."], 410);
+}
 require_csrf();
 
 $payload = request_json();

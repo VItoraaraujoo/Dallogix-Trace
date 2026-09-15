@@ -55,6 +55,17 @@ try {
         (int) $current["equipment_id"],
     );
 
+    $existing = $pdo->prepare(
+        "SELECT id FROM solicitacoes_comandos_clp
+         WHERE carregamento_id = :carregamento_id AND command = 'DESBLOQUEAR_MAQUINA'
+           AND status IN ('PENDENTE','PROCESSANDO') ORDER BY id DESC LIMIT 1 FOR UPDATE",
+    );
+    $existing->execute(["carregamento_id" => $loadingId]);
+    $existingId = (int) ($existing->fetchColumn() ?: 0);
+    if ($existingId > 0) {
+        $pdo->commit();
+        json_response(["data" => ["id" => (int) $loadingId, "state" => "EMERGENCIA", "command" => "DESBLOQUEAR_MAQUINA", "command_request_id" => $existingId, "message" => "Já existe uma solicitação de desbloqueio aguardando confirmação do gateway industrial."]]);
+    }
     $insert = $pdo->prepare(
         "INSERT INTO solicitacoes_comandos_clp (company_id, equipment_id, carregamento_id, command, requested_by) VALUES (:company_id, :equipment_id, :carregamento_id, 'DESBLOQUEAR_MAQUINA', :requested_by)",
     );

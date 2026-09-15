@@ -43,7 +43,9 @@ $placeholders = implode(",", array_fill(0, count($loadIds), "?"));
 
 $items = $pdo->prepare("SELECT p.name, COALESCE(MIN(pc.barcode), p.code, '—') AS barcode, ri.planned_quantity,
     COALESCE((SELECT COUNT(*) FROM leituras l JOIN carregamentos c ON c.id = l.carregamento_id
-      WHERE c.romaneio_id = ri.romaneio_id AND l.product_id = ri.product_id AND l.result = 'VALIDO'), 0) AS moved_quantity
+      WHERE c.romaneio_id = ri.romaneio_id AND l.product_id = ri.product_id
+        AND (ri.truck_id IS NULL OR c.truck_id = ri.truck_id)
+        AND l.result = 'VALIDO'), 0) AS moved_quantity
     FROM romaneio_itens ri JOIN produtos p ON p.id = ri.product_id
     LEFT JOIN codigos_produtos pc ON pc.product_id = p.id
     WHERE ri.romaneio_id = ? GROUP BY ri.id, p.id ORDER BY ri.id");

@@ -19,6 +19,9 @@ final class ServicoSincronizacao
     /** @return array{processed:bool,status:string,id:int,reason?:string,error?:string,http_code?:int} */
     public function processOne(int $queueId, int $companyId): array
     {
+        // Recupera reservas vencidas antes de consultar o evento; isso evita que
+        // um retry individual fique preso em PROCESSANDO para sempre.
+        $this->recoverStaleReservations();
         $event = $this->findEvent($queueId, $companyId);
         if ($event === null) {
             return [
@@ -59,6 +62,9 @@ final class ServicoSincronizacao
     public function processBatch(int $limit = 50): array
     {
         $limit = max(1, min(500, $limit));
+        // A descoberta por empresa acontece antes de reserveBatch(), portanto a
+        // recuperação precisa ocorrer aqui também para incluir filas expiradas.
+        $this->recoverStaleReservations();
         $batchUrl = $this->batchRemoteUrl();
         $globalRemoteUrl = $this->remoteUrl();
         $companyIds = $batchUrl !== "" || $globalRemoteUrl !== ""
