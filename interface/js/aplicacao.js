@@ -4,7 +4,7 @@ import { el, esc } from "./funcoes/html.js";
 import { numero } from "./funcoes/formato.js";
 import { rotuloEstado } from "./funcoes/rotulos.js";
 import { settings } from "./telas/configuracoes.js?v=202609140210";
-import { dalaActions, dalaEdit, dalas, dalaView } from "./telas/dalas.js?v=202609150020";
+import { dalaActions, dalaEdit, dalas, dalaView } from "./telas/dalas.js?v=202609150100";
 import { company } from "./telas/empresa.js";
 import { companies } from "./telas/empresas.js";
 import { errorLogs } from "./telas/logs.js";
@@ -24,7 +24,7 @@ import {
     manifests,
     manifestView,
     work,
-} from "./telas/operacoes.js?v=202609150020";
+} from "./telas/operacoes.js?v=202609150100";
 import { dashboard } from "./telas/painel.js";
 import { users } from "./telas/usuarios.js";
 import { atualizarStatusDasDalas, linhaItemRomaneio } from "./controladores/operacao.js";
@@ -1102,12 +1102,16 @@ function bindActions() {
         } catch (error) {
           alert(error.message);
         }
-      } else if (action === "reverse-on" || action === "reverse-off") {
+      } else if (action === "reverse-on" || action === "reverse-off" || action === "reverse-toggle") {
         if (store.state.operationalState !== "PAUSADO") {
           alert("Para alterar a reversão, pause a esteira primeiro.");
           return;
         }
-        const activating = action === "reverse-on";
+        const activating = action === "reverse-on"
+          ? true
+          : action === "reverse-off"
+            ? false
+            : store.state.plcCommand?.command !== "REVERSAO_ATIVAR";
         if (
           !(await timedCommandConfirmation({
             title: activating ? "Ativar reversão?" : "Desativar reversão?",

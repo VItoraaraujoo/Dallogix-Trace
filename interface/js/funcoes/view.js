@@ -68,24 +68,29 @@ export function manifestsTable(rows, userRole = "") {
           const canManage = ["ADMIN_EMPRESA", "SUPERVISOR"].includes(userRole);
           const canEdit = canManage && ["IMPORTADO", "AGUARDANDO"].includes(r.status);
           const canCancel = canManage && ["IMPORTADO", "AGUARDANDO"].includes(r.status);
-          const actions = `${button("Visualizar", "view-manifest", "secondary").replace('data-action="view-manifest"', `data-action="view-manifest" data-id="${r.id}"`)}${canEdit ? `<button class="button secondary small" data-action="edit-manifest" data-id="${r.id}" type="button">Editar</button>` : ""}${canCancel ? `<button class="button danger small" data-action="cancel-manifest" data-id="${r.id}" type="button">Cancelar</button>` : ""}`;
+          const viewAction = button("Visualizar", "view-manifest", "secondary", `data-id="${r.id}"`);
           const operation = r.status === "AGUARDANDO"
-            ? `<button class="button primary small" data-action="prepare-manifest" data-id="${r.id}" type="button">Iniciar</button>`
+            ? button("Iniciar", "prepare-manifest", "primary", `data-id="${r.id}"`)
             : operating
-              ? `<button class="button primary small" data-action="resume-loading" data-id="${r.id}" data-loading-id="${r.active_loading_id || ""}" type="button">${r.active_state === "PAUSADO" ? "Continuar" : "Retomar"}</button>`
-              : "";
+              ? button(r.active_state === "PAUSADO" ? "Retomar" : "Abrir operação", "resume-loading", "primary", `data-id="${r.id}" data-loading-id="${r.active_loading_id || ""}"`)
+              : viewAction;
+          const extraActions = [
+            operation === viewAction ? "" : viewAction,
+            canEdit ? `<button class="button secondary small" data-action="edit-manifest" data-id="${r.id}" type="button">Editar</button>` : "",
+            canCancel ? `<button class="button danger small" data-action="cancel-manifest" data-id="${r.id}" type="button">Cancelar</button>` : "",
+          ].join("");
+          const actions = `<div class="manifest-row-actions">${operation}${extraActions ? `<details class="table-action-menu"><summary class="button secondary small">Mais ações</summary><div class="table-action-menu-list">${extraActions}</div></details>` : ""}</div>`;
           return `<tr>
-          <td>${data(r.scheduled_date)}</td>
-          <td><strong>${esc(r.number)}</strong></td>
-          <td>${esc(r.expedidor || "—")}</td>
-          <td>${manifestStatusBadge(r)}</td>
-          <td><div class="actions">${actions}</div></td>
-          <td>${operation}</td>
+          <td data-label="Data do carregamento">${data(r.scheduled_date)}</td>
+          <td data-label="Código do romaneio"><strong>${esc(r.number)}</strong></td>
+          <td data-label="Expedidor">${esc(r.expedidor || "—")}</td>
+          <td data-label="Status">${manifestStatusBadge(r)}</td>
+          <td data-label="Ações">${actions}</td>
         </tr>`;
         })
         .join("")
-    : '<tr><td colspan="6">Nenhum romaneio encontrado para os filtros informados.</td></tr>';
-  return `<div class="panel table-wrap"><table><thead><tr><th>Data do carregamento</th><th>Código do romaneio</th><th>Expedidor</th><th>Status</th><th>Ações</th><th>Operação</th></tr></thead><tbody>${body}</tbody></table></div>`;
+    : '<tr><td colspan="5" class="empty-cell">Nenhum romaneio encontrado.</td></tr>';
+  return `<div class="panel table-wrap"><table class="manifests-table"><thead><tr><th>Data do carregamento</th><th>Código do romaneio</th><th>Expedidor</th><th>Status</th><th>Ações</th></tr></thead><tbody>${body}</tbody></table></div>`;
 }
 
 export function deviceBadge(value) {

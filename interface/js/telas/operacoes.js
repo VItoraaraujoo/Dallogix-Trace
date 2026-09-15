@@ -6,7 +6,7 @@ import {
   manifestsTable,
   progress,
   statuses,
-} from "../funcoes/view.js?v=202609150020";
+} from "../funcoes/view.js?v=202609150100";
 
 const STATUS_OPTIONS = [
   ["", "Todos os status"],
@@ -187,13 +187,15 @@ function workControls(store) {
     ? `<section class="panel alert-box"><h3>Leituras sem código</h3><p>Identifique manualmente cada saca após conferência física.</p>${pendingReadings.map((reading) => `<form class="manual-reading-form" data-reading-id="${reading.id}"><label>Leitura #${reading.id}<input name="barcode" required maxlength="80" /></label>${button("Identificar leitura", "identify-reading", "secondary")}</form>`).join("")}</section>`
     : "";
   const command = store.state.plcCommand;
+  const reverseActive = store.state.plcCommand?.command === "REVERSAO_ATIVAR" &&
+    !["ERRO", "REJEITADO", "EXPIRADO"].includes(store.state.plcCommand?.status);
   const reverse = canReverse
-    ? `${button("Ativar reversão", "reverse-on", "secondary", bloqueioComando)}${button("Desativar reversão", "reverse-off", "warning", bloqueioComando)}`
+    ? button(reverseActive ? "Desativar reversão" : "Ativar reversão", "reverse-toggle", reverseActive ? "warning" : "secondary", bloqueioComando)
     : "";
   const finalized = store.state.operationalState === "FINALIZADO";
   const controls = finalized
     ? ""
-    : `<div class="work-controls">${button("Iniciar", "run", "primary", bloqueioComando)}${button("Parar", "stop", "ghost", bloqueioComando)}${button("Emergência", "emergency", "danger", bloqueioComando)}${reverse}</div>`;
+    : `<div class="work-controls"><div class="work-routine-controls">${button("Iniciar", "run", "primary", bloqueioComando)}${button("Parar", "stop", "ghost", bloqueioComando)}${reverse}</div><div class="work-emergency-zone">${button("Emergência", "emergency", "danger", bloqueioComando)}</div></div>`;
   const summaryReady = ["FINALIZANDO", "FINALIZADO"].includes(
     store.state.operationalState,
   );
@@ -212,7 +214,10 @@ function workControls(store) {
   const avisoClp = clpDisponivel
     ? ""
     : `<div class="alert-box" role="alert"><strong>Comandos bloqueados.</strong> ${esc(store.mensagemClpIndisponivel())}</div>`;
-  return `${pageHeader(`Operação / ${equipmentLabel(store)}`, "Tela de Trabalho", `Romaneio #${store.state.romaneio} para o caminhão ${store.state.truck}.`, badge)}${loadingPicker}${statuses(store)}${avisoClp}${manualIdentification}${store.state.emergency ? emergencyPanel : `<div class="grid two"><section class="panel"><span class="kicker">Produto atual</span><h3>Produto do romaneio</h3><p>Leituras vinculadas ao carregamento atual</p><div class="grid three"><div class="metric"><small>Programado</small><strong data-live="planned">${numero(store.state.planned)}</strong></div><div class="metric"><small>Carregado</small><strong data-live="loaded">${numero(store.state.loaded)}</strong></div><div class="metric"><small>Faltam</small><strong data-live="remaining">${numero(left)}</strong></div></div>${progress(store)}${left <= 5 && left > 0 ? '<div class="alert-box">Faltam 5 sacas ou menos. Reduza o envio.</div>' : ""}<div class="actions">${controls}</div></section><aside class="panel"><h3>Estado persistido</h3><ul><li>Estado atual <small data-live="operational-state">${esc(rotuloEstado(store.state.operationalState))}</small></li>${commandPanel}<li>Leituras válidas <small data-live="loaded-secondary">${numero(store.state.loaded)}</small></li><li>Carregamento #${store.state.loadingId || "—"} <small>Sincronizado no banco local</small></li></ul>${summaryAction ? `<div class="actions work-summary-action">${summaryAction}</div>` : ""}</aside></div>`}`;
+  const workTitle = store.state.romaneio && store.state.romaneio !== "—"
+    ? `Romaneio #${store.state.romaneio} · ${equipmentLabel(store)}`
+    : "Operação";
+  return `${pageHeader(`Operação / ${equipmentLabel(store)}`, workTitle, `Caminhão ${store.state.truck}.`, badge)}${loadingPicker}${statuses(store)}${avisoClp}${manualIdentification}${store.state.emergency ? emergencyPanel : `<div class="grid two"><section class="panel"><span class="kicker">Produto atual</span><h3>Contagem do romaneio</h3><p>Leituras vinculadas ao carregamento atual</p><div class="grid three"><div class="metric"><small>Programado</small><strong data-live="planned">${numero(store.state.planned)}</strong></div><div class="metric work-critical-metric"><small>Carregado</small><strong data-live="loaded">${numero(store.state.loaded)}</strong></div><div class="metric work-critical-metric"><small>Faltam</small><strong data-live="remaining">${numero(left)}</strong></div></div>${progress(store)}${left <= 5 && left > 0 ? '<div class="alert-box">Faltam 5 sacas ou menos. Reduza o envio.</div>' : ""}<div class="actions">${controls}</div></section><aside class="panel"><h3>Estado atual</h3><ul><li>Estado <small data-live="operational-state">${esc(rotuloEstado(store.state.operationalState))}</small></li>${commandPanel}<li>Leituras válidas <small data-live="loaded-secondary">${numero(store.state.loaded)}</small></li><li>Carregamento #${store.state.loadingId || "—"}</li></ul>${summaryAction ? `<div class="actions work-summary-action">${summaryAction}</div>` : ""}</aside></div>`}`;
 }
 export function work(store) {
   if (
