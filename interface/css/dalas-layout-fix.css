@@ -127,6 +127,7 @@
         display: grid;
         grid-template-columns: minmax(112px, 38%) minmax(0, 1fr);
         padding: 10px 0;
+        width: 100% !important;
     }
 }
 
