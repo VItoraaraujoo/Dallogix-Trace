@@ -46,7 +46,7 @@ $audit = $query(
 );
 $pendingSync = $query(
     $pdo,
-    "SELECT COUNT(*) AS total FROM fila_sincronizacao q JOIN logs_auditoria a ON a.entity_type = q.aggregate_type AND a.entity_id = q.aggregate_id WHERE a.company_id = :company_id AND q.status = 'PENDENTE'",
+    "SELECT COUNT(*) AS total FROM fila_sincronizacao q WHERE q.company_id = :company_id AND q.status IN ('PENDENTE', 'ERRO', 'PROCESSANDO')",
     ["company_id" => $companyId],
 );
 $devices = $query(
@@ -72,7 +72,7 @@ $maquinas = $query(
         d.status AS clp_status, d.last_seen_at,
         c.id AS carregamento_id, c.state AS carregamento_state, r.id AS romaneio_id, r.number AS romaneio_number, rt.plate,
         COALESCE((SELECT SUM(ri.planned_quantity) FROM romaneio_itens ri WHERE ri.romaneio_id = c.romaneio_id AND (ri.truck_id = c.truck_id OR ri.truck_id IS NULL)), 0) AS planned_quantity,
-        (SELECT COUNT(*) FROM leituras l WHERE l.carregamento_id = c.id AND l.result = 'VALIDO') AS valid_readings
+        COALESCE(c.leituras_validas, 0) AS valid_readings
  FROM equipamentos e
  LEFT JOIN status_dispositivos d ON d.equipment_id = e.id AND d.device_type = 'CLP'
  LEFT JOIN carregamentos c ON c.id = (SELECT c2.id FROM carregamentos c2 WHERE c2.equipment_id = e.id ORDER BY c2.id DESC LIMIT 1)

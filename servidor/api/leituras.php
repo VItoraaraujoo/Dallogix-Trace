@@ -50,10 +50,16 @@ if ($attemptNumber !== 1) {
 }
 
 $pdo = db();
+$pdo->beginTransaction();
+register_shutdown_function(static function () use ($pdo): void {
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+});
 $loadingStatement = $pdo->prepare(
     'SELECT c.id, c.state, c.romaneio_id, c.truck_id, c.equipment_id
      FROM carregamentos c
-     WHERE c.id = :id AND c.company_id = :company_id LIMIT 1',
+     WHERE c.id = :id AND c.company_id = :company_id LIMIT 1 FOR UPDATE',
 );
 $loadingStatement->execute([
     "id" => $loadingId,
@@ -61,12 +67,14 @@ $loadingStatement->execute([
 ]);
 $loading = $loadingStatement->fetch();
 if (!$loading) {
+    $pdo->rollBack();
     responder_json(
         ["error" => "Carregamento não encontrado para esta empresa."],
         404,
     );
 }
 if ($loading["state"] === "EMERGENCIA") {
+    $pdo->rollBack();
     responder_json(
         [
             "error" =>
@@ -76,6 +84,7 @@ if ($loading["state"] === "EMERGENCIA") {
     );
 }
 if ($loading["state"] !== "CARREGANDO") {
+    $pdo->rollBack();
     responder_json(
         ["error" => "Leitura ignorada: a esteira está em {$loading["state"]}."],
         409,
@@ -91,7 +100,7 @@ $plannedStatement->execute([
 ]);
 $plannedQuantity = (int) $plannedStatement->fetchColumn();
 $validCountStatement = $pdo->prepare(
-    "SELECT COUNT(*) FROM leituras WHERE carregamento_id = :carregamento_id AND result = 'VALIDO'",
+    "SELECT leituras_validas FROM carregamentos WHERE id = :carregamento_id FOR UPDATE",
 );
 $validCountStatement->execute(["carregamento_id" => $loadingId]);
 $validCount = (int) $validCountStatement->fetchColumn();
@@ -105,6 +114,7 @@ if ($sensorEventId) {
         "equipment_id" => $loading["equipment_id"],
     ]);
     if (!$sensorStatement->fetch()) {
+        $pdo->rollBack();
         responder_json(
             ["error" => "Evento de sensor não pertence ao carregamento."],
             422,
@@ -146,10 +156,11 @@ if ($result === "VALIDO" && $plannedQuantity > 0 && $validCount >= $plannedQuant
 }
 
 $insert = $pdo->prepare(
-    "INSERT INTO leituras (carregamento_id, sensor_event_id, product_id, barcode, attempt_number, result, read_at) VALUES (:carregamento_id, :sensor_event_id, :product_id, :barcode, :attempt_number, :result, NOW(3))",
+    "INSERT INTO leituras (company_id, carregamento_id, sensor_event_id, product_id, barcode, attempt_number, result, read_at) VALUES (:company_id, :carregamento_id, :sensor_event_id, :product_id, :barcode, :attempt_number, :result, NOW(3))",
 );
 try {
     $insert->execute([
+        "company_id" => $usuarioAtor["company_id"],
         "carregamento_id" => $loadingId,
         "sensor_event_id" => $sensorEventId ?: null,
         "product_id" => $productId,
@@ -168,6 +179,9 @@ try {
         );
         $existing->execute(["sensor_event_id" => $sensorEventId]);
         $reading = $existing->fetch();
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
         responder_json(
             [
                 "data" => [
@@ -184,6 +198,12 @@ try {
     throw $exception;
 }
 $readingId = (int) $pdo->lastInsertId();
+if ($result === "VALIDO") {
+    $validCounter = $pdo->prepare(
+        "UPDATE carregamentos SET leituras_validas = leituras_validas + 1 WHERE id = :id",
+    );
+    $validCounter->execute(["id" => $loadingId]);
+}
 record_operational_event(
     $pdo,
     $usuarioAtor,
@@ -300,7 +320,14 @@ if (
         "equipment_id" => $loading["equipment_id"],
         "reason" => $result,
     ]);
-    $cameraRequestId = (int) $pdo->lastInsertId();
+    $cameraIdStatement = $pdo->prepare(
+        "SELECT id FROM solicitacoes_captura_camera WHERE sensor_event_id = :sensor_event_id LIMIT 1",
+    );
+    $cameraIdStatement->execute(["sensor_event_id" => $sensorEventId]);
+    $cameraRequestId = (int) ($cameraIdStatement->fetchColumn() ?: 0);
+    if ($cameraRequestId < 1) {
+        throw new RuntimeException("Solicitação de captura da câmera não encontrada após gravação.");
+    }
     record_operational_event(
         $pdo,
         $usuarioAtor,
@@ -376,6 +403,7 @@ if (
     );
     $loadStatus = "COMPLETO";
 }
+$pdo->commit();
 responder_json(
     [
         "data" => [

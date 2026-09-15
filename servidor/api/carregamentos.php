@@ -14,7 +14,7 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
         'SELECT c.id, c.state, c.equipment_id, c.started_at, c.finished_at,
                 r.number AS romaneio_number, rt.plate, e.equipment_code,
                 COALESCE((SELECT SUM(ri.planned_quantity) FROM romaneio_itens ri WHERE ri.romaneio_id = c.romaneio_id AND (ri.truck_id = c.truck_id OR ri.truck_id IS NULL)), 0) AS planned_quantity,
-                (SELECT COUNT(*) FROM leituras l WHERE l.carregamento_id = c.id AND l.result = "VALIDO") AS valid_readings
+                COALESCE(c.leituras_validas, 0) AS valid_readings
          FROM carregamentos c
          JOIN romaneios r ON r.id = c.romaneio_id
          JOIN romaneio_caminhoes rt ON rt.id = c.truck_id

@@ -22,15 +22,23 @@ if (!$loadingId) {
 }
 
 $pdo = db();
+$pdo->beginTransaction();
+register_shutdown_function(static function () use ($pdo): void {
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+});
 $statement = $pdo->prepare(
-    "SELECT id, state, romaneio_id FROM carregamentos WHERE id = :id AND company_id = :company_id LIMIT 1",
+    "SELECT id, state, romaneio_id, truck_id FROM carregamentos WHERE id = :id AND company_id = :company_id LIMIT 1 FOR UPDATE",
 );
 $statement->execute(["id" => $loadingId, "company_id" => $user["company_id"]]);
 $loading = $statement->fetch();
 if (!$loading) {
+    $pdo->rollBack();
     json_response(["error" => "Carregamento não encontrado."], 404);
 }
 if (!in_array($loading["state"], ["CARREGANDO", "FINALIZANDO"], true)) {
+    $pdo->rollBack();
     json_response(
         [
             "error" => "Carregamento em estado {$loading["state"]} não pode ser encerrado.",
@@ -44,6 +52,7 @@ $pending = $pdo->prepare(
 );
 $pending->execute(["id" => $loadingId]);
 if ((int) $pending->fetchColumn() > 0) {
+    $pdo->rollBack();
     json_response(
         [
             "error" =>
@@ -52,22 +61,33 @@ if ((int) $pending->fetchColumn() > 0) {
         409,
     );
 }
-$planned = $pdo->prepare("SELECT COALESCE(SUM(ri.planned_quantity), 0) FROM romaneio_itens ri WHERE ri.romaneio_id = :romaneio_id AND (ri.truck_id = (SELECT truck_id FROM carregamentos WHERE id = :loading_id) OR ri.truck_id IS NULL)");
-$planned->execute(["romaneio_id" => $loading["romaneio_id"], "loading_id" => $loadingId]);
-$plannedQuantity = (int) $planned->fetchColumn();
-$loaded = $pdo->prepare("SELECT COUNT(*) FROM leituras WHERE carregamento_id = :id AND result = 'VALIDO'");
-$loaded->execute(["id" => $loadingId]);
-$loadedQuantity = (int) $loaded->fetchColumn();
-$hasDivergence = $loadedQuantity !== $plannedQuantity;
+$divergences = $pdo->prepare("SELECT ri.product_id, ri.planned_quantity,
+    COALESCE((SELECT COUNT(*) FROM leituras l WHERE l.carregamento_id = :loading_id AND l.product_id = ri.product_id AND l.result = 'VALIDO'), 0) AS moved_quantity,
+    p.name FROM romaneio_itens ri JOIN produtos p ON p.id = ri.product_id
+    WHERE ri.romaneio_id = :romaneio_id AND (ri.truck_id = :truck_id OR ri.truck_id IS NULL)");
+$divergences->execute([
+    "loading_id" => $loadingId,
+    "romaneio_id" => $loading["romaneio_id"],
+    "truck_id" => $loading["truck_id"],
+]);
+$divergenceRows = $divergences->fetchAll();
+$hasDivergence = false;
+foreach ($divergenceRows as $divergence) {
+    if ((int) $divergence["planned_quantity"] !== (int) $divergence["moved_quantity"]) {
+        $hasDivergence = true;
+        break;
+    }
+}
 if ($hasDivergence && !in_array($user["role"], ["ADMIN_EMPRESA", "SUPERVISOR"], true)) {
+    $pdo->rollBack();
     json_response(["error" => "Somente supervisores ou administradores podem finalizar uma divergência."], 403);
 }
 if ($hasDivergence && $justification === "") {
+    $pdo->rollBack();
     json_response(["error" => "Informe uma justificativa para finalizar com divergência."], 422);
 }
 
 try {
-    $pdo->beginTransaction();
     $update = $pdo->prepare(
         "UPDATE carregamentos SET state = 'FINALIZADO', finished_at = NOW(), finish_justification = :justification WHERE id = :id AND company_id = :company_id AND state = :previous_state",
     );
@@ -82,15 +102,6 @@ try {
         json_response(["error" => "O estado do carregamento mudou. Atualize a operação antes de encerrar."], 409);
     }
     // A divergência precisa virar ocorrência auditável: não é apenas um estado visual do romaneio.
-    $divergences = $pdo->prepare("SELECT ri.product_id, ri.planned_quantity,
-        COALESCE((SELECT COUNT(*) FROM leituras l WHERE l.carregamento_id = :loading_id AND l.product_id = ri.product_id AND l.result = 'VALIDO'), 0) AS moved_quantity,
-        p.name FROM romaneio_itens ri JOIN produtos p ON p.id = ri.product_id
-        WHERE ri.romaneio_id = :romaneio_id AND (ri.truck_id = (SELECT truck_id FROM carregamentos WHERE id = :truck_loading_id) OR ri.truck_id IS NULL)");
-    $divergences->execute([
-        "loading_id" => $loadingId,
-        "truck_loading_id" => $loadingId,
-        "romaneio_id" => $loading["romaneio_id"],
-    ]);
     $registerDivergence = $pdo->prepare("INSERT INTO ocorrencias (company_id, carregamento_id, product_id, reference_key, type, quantity, description, created_by)
         VALUES (:company_id, :carregamento_id, :product_id, :reference_key, 'DIVERGENCIA_FINAL', :quantity, :description, :created_by)
         ON DUPLICATE KEY UPDATE quantity = VALUES(quantity), description = VALUES(description)");
@@ -112,12 +123,23 @@ try {
             "description" => "{$kind} no fechamento: {$divergence["name"]} — previsto {$planned}, movido {$moved}.",
             "created_by" => $user["id"],
         ]);
+        $divergenceIdStatement = $pdo->prepare(
+            "SELECT id FROM ocorrencias WHERE carregamento_id = :carregamento_id AND reference_key = :reference_key LIMIT 1",
+        );
+        $divergenceIdStatement->execute([
+            "carregamento_id" => $loadingId,
+            "reference_key" => "FINAL:" . $loadingId . ":" . $divergence["product_id"],
+        ]);
+        $divergenceId = (int) ($divergenceIdStatement->fetchColumn() ?: 0);
+        if ($divergenceId < 1) {
+            throw new RuntimeException("Divergência final não encontrada após gravação.");
+        }
         record_operational_event(
             $pdo,
             $user,
             "DIVERGENCIA_FINAL_REGISTRADA",
             "ocorrencia",
-            (int) $pdo->lastInsertId(),
+            $divergenceId,
             [
                 "carregamento_id" => (int) $loadingId,
                 "product_id" => (int) $divergence["product_id"],

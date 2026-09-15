@@ -68,6 +68,11 @@ if ($scenario === 'admin-target') {
 } else { throw new RuntimeException('Cenário inválido.'); }
 $code = file_get_contents(__DIR__ . '/../servidor/api/' . $endpoint);
 $code = preg_replace('/^require_once .*bootstrap\.php";$/m', '', $code);
+$code = preg_replace('/^require_once .*InicializadorAcoesDala\.php";$/m', '', $code);
+$code = preg_replace('/^require_once .*ServicoSincronizacao\.php";$/m', '', $code);
+if ($scenario === 'sync-reserved') {
+    eval('namespace App\\Aplicacao; final class ServicoSincronizacao { public function __construct(private \\PDO $connection) {} public function processOne(int $queueId, int $companyId): array { return ["processed" => false, "status" => "CONCORRENTE", "id" => $queueId, "reason" => "Evento já reservado ou aguardando o próximo horário de tentativa."]; } }');
+}
 // eval já recebe código PHP: uma saída para HTML antes do declare viola strict_types no PHP 8.3.
 $code = preg_replace('/\A<\?php\s*/', '', $code, 1);
 try {

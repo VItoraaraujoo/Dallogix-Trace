@@ -32,8 +32,8 @@ try {
     $insert = $pdo->prepare("INSERT INTO retornos (carregamento_id, leitura_id, quantity, reason, created_by) VALUES (:loading_id, :reading_id, 1, :reason, :created_by)");
     $insert->execute(["loading_id" => $loadingId, "reading_id" => $reading["id"], "reason" => $reason, "created_by" => $user["id"]]);
     $returnId = (int) $pdo->lastInsertId();
-    $reverse = $pdo->prepare("INSERT INTO leituras (carregamento_id, product_id, barcode, attempt_number, result, read_at) VALUES (:loading_id, :product_id, :barcode, 1, 'RETORNO', NOW(3))");
-    $reverse->execute(["loading_id" => $loadingId, "product_id" => $reading["product_id"], "barcode" => $reading["barcode"]]);
+    $reverse = $pdo->prepare("INSERT INTO leituras (company_id, carregamento_id, product_id, barcode, attempt_number, result, read_at) VALUES (:company_id, :loading_id, :product_id, :barcode, 1, 'RETORNO', NOW(3))");
+    $reverse->execute(["company_id" => $user["company_id"], "loading_id" => $loadingId, "product_id" => $reading["product_id"], "barcode" => $reading["barcode"]]);
     record_operational_event($pdo, $user, "RETORNO_REGISTRADO", "retorno", $returnId, ["carregamento_id" => (int) $loadingId, "leitura_id" => (int) $reading["id"], "reason" => $reason]);
     $pdo->commit();
     json_response(["data" => ["id" => $returnId, "leitura_id" => (int) $reading["id"], "result" => "RETORNO", "quantity" => 1]], 201);

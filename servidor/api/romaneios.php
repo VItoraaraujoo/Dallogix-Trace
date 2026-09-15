@@ -141,8 +141,15 @@ if ($_SERVER["REQUEST_METHOD"] === "PATCH") {
     }
 
     $payload = ler_json_da_requisicao();
+    $action = strtolower(trim((string) ($payload["action"] ?? "")));
+    if (!in_array($action, ["cancel", "update"], true)) {
+        responder_json(
+            ["error" => "Ação inválida. Use cancel ou update."],
+            422,
+        );
+    }
 
-    if (($payload["action"] ?? "") === "cancel") {
+    if ($action === "cancel") {
         $romaneioId = filter_var($payload["romaneio_id"] ?? null, FILTER_VALIDATE_INT);
         $reason = trim((string) ($payload["justification"] ?? ""));
         if (!$romaneioId || $reason === "") {
@@ -174,7 +181,7 @@ if ($_SERVER["REQUEST_METHOD"] === "PATCH") {
         }
     }
 
-    if (($payload["action"] ?? "") === "update") {
+    if ($action === "update") {
         $romaneioId = filter_var($payload["romaneio_id"] ?? null, FILTER_VALIDATE_INT);
         $number = trim((string) ($payload["number"] ?? ""));
         $scheduledDate = trim((string) ($payload["scheduled_date"] ?? ""));
