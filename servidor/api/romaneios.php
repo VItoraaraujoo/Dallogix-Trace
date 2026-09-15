@@ -67,6 +67,9 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
     $number = trim((string) ($_GET["number"] ?? ""));
     $expedidor = trim((string) ($_GET["expedidor"] ?? ""));
     $status = strtoupper(trim((string) ($_GET["status"] ?? "")));
+    $page = max(1, (int) ($_GET["page"] ?? 1));
+    $perPage = max(10, min(100, (int) ($_GET["per_page"] ?? 50)));
+    $offset = ($page - 1) * $perPage;
     $allowedStatuses = ["IMPORTADO", "AGUARDANDO", "EM_ANDAMENTO", "FINALIZADO", "CANCELADO"];
 
     if ($dateFrom !== null && $dateTo !== null && $dateFrom > $dateTo) {
@@ -100,6 +103,9 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
     }
 
     $where = implode(" AND ", $conditions);
+    $totalStatement = $pdo->prepare("SELECT COUNT(*) FROM romaneios r WHERE {$where}");
+    $totalStatement->execute($params);
+    $total = (int) $totalStatement->fetchColumn();
     $statement = $pdo->prepare(
         "SELECT r.id, r.number, r.scheduled_date, r.status, r.expedidor,
                 (SELECT rt.plate FROM romaneio_caminhoes rt WHERE rt.romaneio_id = r.id ORDER BY rt.id LIMIT 1) AS plate,
@@ -115,7 +121,8 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
          LEFT JOIN romaneio_caminhoes rt ON rt.romaneio_id = r.id
          WHERE {$where}
          GROUP BY r.id
-         ORDER BY r.scheduled_date DESC, r.id DESC",
+         ORDER BY r.scheduled_date DESC, r.id DESC
+         LIMIT {$perPage} OFFSET {$offset}",
     );
     $statement->execute($params);
     $rows = $statement->fetchAll();
@@ -131,7 +138,15 @@ if ($_SERVER["REQUEST_METHOD"] === "GET") {
             : 0;
     }
     unset($row);
-    responder_json(["data" => $rows]);
+    responder_json([
+        "data" => $rows,
+        "meta" => [
+            "page" => $page,
+            "per_page" => $perPage,
+            "total" => $total,
+            "pages" => $total > 0 ? (int) ceil($total / $perPage) : 0,
+        ],
+    ]);
 }
 
 if ($_SERVER["REQUEST_METHOD"] === "PATCH") {

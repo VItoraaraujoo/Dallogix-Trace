@@ -38,6 +38,8 @@ export class ArmazenamentoTrace {
         expedidor: "",
         status: "",
       },
+      manifestPage: 1,
+      manifestMeta: { page: 1, per_page: 50, total: 0, pages: 0 },
       reportFilters: { date_from: "", date_to: "", status: "" },
       dashboard: null,
       manifestDetail: null,
@@ -77,6 +79,9 @@ export class ArmazenamentoTrace {
     Object.entries(this.state.manifestFilters || {}).forEach(([key, value]) => {
       if (value) params.set(key, value);
     });
+    const page = Math.max(1, Number(this.state.manifestPage) || 1);
+    params.set("page", String(page));
+    params.set("per_page", "50");
     const query = params.toString();
     const response = await fetch(
       `/api/romaneios.php${query ? `?${query}` : ""}`,
@@ -92,8 +97,15 @@ export class ArmazenamentoTrace {
       throw new Error(message);
     }
     this.manifests = result.data || [];
+    this.state.manifestMeta = result.meta || {
+      page,
+      per_page: 50,
+      total: this.manifests.length,
+      pages: this.manifests.length ? 1 : 0,
+    };
   }
   async applyManifestFilters(raw) {
+    this.state.manifestPage = 1;
     this.state.manifestFilters = {
       date_from: String(raw.date_from || "").trim(),
       date_to: String(raw.date_to || "").trim(),
@@ -104,6 +116,7 @@ export class ArmazenamentoTrace {
     await this.loadManifests();
   }
   async clearManifestFilters() {
+    this.state.manifestPage = 1;
     this.state.manifestFilters = {
       date_from: "",
       date_to: "",
@@ -111,6 +124,11 @@ export class ArmazenamentoTrace {
       expedidor: "",
       status: "",
     };
+    await this.loadManifests();
+  }
+  async setManifestPage(page) {
+    const pages = Math.max(1, Number(this.state.manifestMeta?.pages) || 1);
+    this.state.manifestPage = Math.min(pages, Math.max(1, Number(page) || 1));
     await this.loadManifests();
   }
   async loadDashboard() {

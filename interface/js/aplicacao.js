@@ -1,4 +1,4 @@
-import { ArmazenamentoTrace } from "./classes/ArmazenamentoTrace.js?v=202609140210";
+import { ArmazenamentoTrace } from "./classes/ArmazenamentoTrace.js?v=202609150500";
 import { FORM_ACTIONS } from "./constantes/acoes.js?v=202609140210";
 import { el, esc } from "./funcoes/html.js";
 import { numero } from "./funcoes/formato.js";
@@ -24,7 +24,7 @@ import {
     manifests,
     manifestView,
     work,
-} from "./telas/operacoes.js?v=202609150300";
+} from "./telas/operacoes.js?v=202609150500";
 import { dashboard } from "./telas/painel.js?v=202609150300";
 import { users } from "./telas/usuarios.js";
 import { atualizarStatusDasDalas, linhaItemRomaneio } from "./controladores/operacao.js";
@@ -745,6 +745,15 @@ function bindActions() {
       }
       if (action === "goto-manifests") {
         navigate("manifests");
+        return;
+      }
+      if (action === "manifest-page") {
+        try {
+          await store.setManifestPage(node.dataset.page);
+          render();
+        } catch (error) {
+          alert(error.message);
+        }
         return;
       }
       if (action === "goto-dalas") {

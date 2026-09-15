@@ -31,6 +31,12 @@ export function manifests(store) {
       `<option value="${value}"${filters.status === value ? " selected" : ""}>${label}</option>`,
   ).join("");
   const canCreate = ["ADMIN_EMPRESA", "SUPERVISOR"].includes(store.state.userRole);
+  const meta = store.state.manifestMeta || {};
+  const currentPage = Number(meta.page || 1);
+  const pages = Number(meta.pages || 0);
+  const pagination = pages > 1
+    ? `<nav class="table-pagination" aria-label="Paginação de romaneios"><span>${numero(meta.total)} romaneio(s) · página ${currentPage} de ${pages}</span><div class="actions"><button class="button secondary small" data-action="manifest-page" data-page="${currentPage - 1}" type="button" ${currentPage <= 1 ? "disabled" : ""}>Anterior</button><button class="button secondary small" data-action="manifest-page" data-page="${currentPage + 1}" type="button" ${currentPage >= pages ? "disabled" : ""}>Próxima</button></div></nav>`
+    : "";
   return `${pageHeader("Operação", "Romaneios", "Consulte os carregamentos e abra uma operação.", canCreate ? button("Novo romaneio", "new-manifest") : "")}
 <section class="panel filters"><form id="manifest-filters"><div class="filter-grid">
 <label>Data inicial<input name="date_from" type="date" value="${esc(filters.date_from || "")}" /></label>
@@ -38,7 +44,7 @@ export function manifests(store) {
 <label>Código do romaneio<input name="number" value="${esc(filters.number || "")}" /></label>
 <label>Expedidor<input name="expedidor" value="${esc(filters.expedidor || "")}" /></label>
 <label>Status<select name="status">${options}</select></label>
-</div></form></section><br>${manifestsTable(store.manifests, store.state.userRole)}`;
+</div></form></section><br>${manifestsTable(store.manifests, store.state.userRole)}${pagination}`;
 }
 
 // Detalhe do romaneio (tela Visualizar).

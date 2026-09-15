@@ -5849,6 +5849,23 @@ body.mobile-menu-open {
   color: #69808f !important;
 }
 
+.table-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+@media (max-width: 600px) {
+  .table-pagination {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
 /* Dashboard: preserve the existing light palette while making loading and
    urgency visible before the operational data arrives. */
 .dala-album-grid.is-loading {
