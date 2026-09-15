@@ -4,6 +4,7 @@ set -euo pipefail
 # Atualiza uma instalação local somente quando não há carregamento em andamento.
 # O servidor de atualização publica um manifesto assinado e um pacote imutável.
 root_dir="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$root_dir"
 if [[ -f "$root_dir/.env" ]]; then
   set -a
   # O .env é criado pelo administrador e já é usado pelo Compose.
@@ -66,6 +67,14 @@ PY
 )
 version="${fields[0]}"; artifact_url="${fields[1]}"; expected_sha="${fields[2]}"; signature_b64="${fields[3]}"
 [[ "$version" =~ ^[A-Za-z0-9._-]+$ ]] || { echo "Versão inválida." >&2; exit 10; }
+failed_marker="$state_dir/failed-$version"
+if [[ -f "$failed_marker" && "${TRACE_RETRY_FAILED_UPDATE:-0}" != "1" ]]; then
+  echo "A versão $version já falhou anteriormente; revisão manual obrigatória (use TRACE_RETRY_FAILED_UPDATE=1 para repetir)." >&2
+  exit 21
+fi
+mark_failed_update() {
+  printf 'version=%s\nfailed_at=%s\n' "$version" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$failed_marker"
+}
 printf '%s\n%s\n%s\n' "$version" "$artifact_url" "$expected_sha" > "$work_dir/payload"
 python3 - "$signature_b64" "$work_dir/signature.bin" <<'PY'
 import base64, pathlib, sys
@@ -109,7 +118,12 @@ if [[ "$dry_run" == "1" ]]; then
 fi
 
 backup="$state_dir/backups/pre-$version-$(date -u +%Y%m%dT%H%M%SZ).tar.gz"
-bash "$root_dir/scripts/backup_db.sh"
+db_backup_output="$(bash "$root_dir/scripts/backup_db.sh" "$state_dir/backups")"
+db_backup="$(printf '%s\n' "$db_backup_output" | sed -n 's/^Backup criado: //p' | tail -n 1)"
+[[ -s "$db_backup" && -s "$db_backup.sha256" ]] || {
+  echo "O backup do banco foi criado sem caminho verificável; atualização cancelada." >&2
+  exit 17
+}
 tar --exclude='./.env' --exclude='./armazenamento' --exclude='./.git' -czf "$backup" -C "$root_dir" .
 release_dir="$state_dir/releases/$version"
 rm -rf "$release_dir"
@@ -126,13 +140,37 @@ rollback() {
     echo "Não foi possível restaurar os arquivos da versão anterior." >&2
     return 1
   fi
+  if ! docker compose up -d mysql >/dev/null; then
+    echo "Não foi possível iniciar o banco para o rollback." >&2
+    return 1
+  fi
+  mysql_ready=0
+  for _ in $(seq 1 "${MYSQL_ROLLBACK_ATTEMPTS:-30}"); do
+    if docker compose exec -T mysql sh -lc 'mysqladmin ping -uroot -p"$MYSQL_ROOT_PASSWORD" --silent' >/dev/null 2>&1; then
+      mysql_ready=1
+      break
+    fi
+    sleep 2
+  done
+  if [[ "$mysql_ready" != "1" ]]; then
+    echo "O banco não ficou pronto para o rollback." >&2
+    return 1
+  fi
+  if ! bash "$root_dir/scripts/verify_backup.sh" "$db_backup" >/dev/null; then
+    echo "O backup do banco não passou na verificação durante o rollback." >&2
+    return 1
+  fi
+  if ! docker compose exec -T mysql sh -lc 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE"' < "$db_backup"; then
+    echo "Não foi possível restaurar o banco da versão anterior." >&2
+    return 1
+  fi
   if ! docker compose up -d --build >/dev/null; then
     echo "Não foi possível iniciar a versão anterior." >&2
     return 1
   fi
   rollback_healthy=0
   for _ in $(seq 1 "${HEALTHCHECK_ATTEMPTS:-30}"); do
-    if curl --fail --silent --max-time 3 "http://127.0.0.1:${PHP_PORT:-8080}/api/health.php" >/dev/null; then rollback_healthy=1; break; fi
+    if curl --fail --silent --max-time 3 "http://127.0.0.1:${WEB_PORT:-8080}/api/prontidao.php" >/dev/null; then rollback_healthy=1; break; fi
     sleep 2
   done
   if [[ "$rollback_healthy" != "1" ]]; then
@@ -144,23 +182,39 @@ rollback() {
 docker compose stop >/dev/null
 if ! rsync -a --delete --exclude='.env' --exclude='armazenamento/' --exclude='.git/' "$source_dir/" "$root_dir/"; then
   echo "Não foi possível instalar os arquivos da nova versão." >&2
+  mark_failed_update
   rollback || true
   exit 18
 fi
+if ! docker compose up -d mysql >/dev/null; then
+  echo "O banco não conseguiu iniciar para receber as migrations; iniciando rollback." >&2
+  mark_failed_update
+  rollback || true
+  exit 19
+fi
+if ! bash "$root_dir/scripts/migrate.sh"; then
+  echo "As migrations da nova versão falharam; iniciando rollback." >&2
+  mark_failed_update
+  rollback || true
+  exit 19
+fi
 if ! docker compose up -d --build >/dev/null; then
   echo "A nova versão não conseguiu iniciar; iniciando rollback." >&2
+  mark_failed_update
   rollback || true
   exit 19
 fi
 healthy=0
 for _ in $(seq 1 "${HEALTHCHECK_ATTEMPTS:-30}"); do
-  if curl --fail --silent --max-time 3 "http://127.0.0.1:${PHP_PORT:-8080}/api/health.php" >/dev/null; then healthy=1; break; fi
+  if curl --fail --silent --max-time 3 "http://127.0.0.1:${WEB_PORT:-8080}/api/prontidao.php" >/dev/null; then healthy=1; break; fi
   sleep 2
 done
 if [[ "$healthy" != "1" ]]; then
   echo "A versão $version não passou no healthcheck; iniciando rollback." >&2
   rollback || true
+  mark_failed_update
   exit 20
 fi
+rm -f "$failed_marker"
 printf '%s\n' "$version" > "$state_dir/current_version"
 echo "Trace atualizado com sucesso para $version. Backup: $backup"

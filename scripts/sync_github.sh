@@ -34,25 +34,16 @@ fi
 
 git merge --ff-only "$remote_name/$branch"
 # Migrações versionadas: mantém os dados, cria backup antes de qualquer DDL e
-# impede que o código novo suba usando uma estrutura antiga.
+# usa schema_migrations como fonte única de verdade.
 mkdir -p armazenamento/backups
 bash scripts/backup_db.sh
-for migration in banco-de-dados/migrations/020_nomenclatura_portugues.sql banco-de-dados/migrations/021_acoes_dala_e_logs_erros.sql banco-de-dados/migrations/022_produtos_empresa_demonstracao.sql banco-de-dados/migrations/023_codigo_barras_por_empresa.sql; do
-  [[ -f "$migration" ]] || continue
-  marker="armazenamento/.migration-$(basename "$migration").done"
-  [[ -f "$marker" ]] && continue
-  # MYSQL_USER e MYSQL_PASSWORD vivem somente no contêiner. Usar a conta da
-  # aplicação (com privilégios de migração) torna o deploy independente da
-  # senha root e evita vazar credenciais para o host ou para os logs.
-  docker compose exec -T mysql sh -lc 'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"' < "$migration"
-  touch "$marker"
-done
+bash scripts/migrate.sh
 # Reconstrói e recria somente os serviços afetados pela alteração. A VM, o
 # banco e os serviços que não mudaram permanecem em execução.
 docker compose up -d --build --remove-orphans
 healthy=0
 for _ in $(seq 1 "${HEALTHCHECK_ATTEMPTS:-90}"); do
-  if curl --fail --silent --max-time 3 "http://127.0.0.1:${WEB_PORT:-80}/api/health.php" >/dev/null; then healthy=1; break; fi
+  if curl --fail --silent --max-time 3 "http://127.0.0.1:${WEB_PORT:-8080}/api/prontidao.php" >/dev/null; then healthy=1; break; fi
   sleep 2
 done
 [[ "$healthy" == "1" ]] || { echo "Atualização aplicada, mas o healthcheck falhou." >&2; exit 6; }
