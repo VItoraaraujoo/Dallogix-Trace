@@ -7,7 +7,7 @@ import {
   emergencyPanel,
   progress,
   statuses,
-} from "../funcoes/view.js?v=202609151955";
+} from "../funcoes/view.js?v=202609150300";
 
 const STATUS_OPTIONS = [
   ["", "Todos os status"],
@@ -38,10 +38,9 @@ export function manifests(store) {
     ? `<nav class="table-pagination" aria-label="Paginação de romaneios"><span>${numero(meta.total)} romaneio(s) · página ${currentPage} de ${pages}</span><div class="actions"><button class="button secondary small" data-action="manifest-page" data-page="${currentPage - 1}" type="button" ${currentPage <= 1 ? "disabled" : ""}>Anterior</button><button class="button secondary small" data-action="manifest-page" data-page="${currentPage + 1}" type="button" ${currentPage >= pages ? "disabled" : ""}>Próxima</button></div></nav>`
     : "";
   return `${pageHeader("Operação", "Romaneios", "Consulte os carregamentos e abra uma operação.", canCreate ? button("Novo romaneio", "new-manifest") : "")}
-<div class="filter-toolbar"><button class="button secondary filter-toggle" data-action="toggle-manifest-filters" aria-expanded="true" aria-controls="manifest-filters-panel" type="button">Filtros de pesquisa</button></div>
-<section class="panel filters" id="manifest-filters-panel"><form id="manifest-filters"><div class="filter-grid">
-<label class="date-filter-field">Data inicial<div class="date-filter-control"><input name="date_from" type="date" value="${esc(filters.date_from || "")}" /><button class="date-clear" data-action="clear-manifest-date" data-field="date_from" type="button" aria-label="Limpar data inicial">Limpar</button></div></label>
-<label class="date-filter-field">Data final<div class="date-filter-control"><input name="date_to" type="date" value="${esc(filters.date_to || "")}" /><button class="date-clear" data-action="clear-manifest-date" data-field="date_to" type="button" aria-label="Limpar data final">Limpar</button></div></label>
+<section class="panel filters"><form id="manifest-filters"><div class="filter-grid">
+<label>Data inicial<input name="date_from" type="date" value="${esc(filters.date_from || "")}" /></label>
+<label>Data final<input name="date_to" type="date" value="${esc(filters.date_to || "")}" /></label>
 <label>Código do romaneio<input name="number" value="${esc(filters.number || "")}" /></label>
 <label>Expedidor<input name="expedidor" value="${esc(filters.expedidor || "")}" /></label>
 <label>Status<select name="status">${options}</select></label>
@@ -72,15 +71,15 @@ export function manifestView(store) {
 <div class="panel detail-card"><small>Programado</small><strong>${numero(manifest.planned_quantity)}</strong></div>
 <div class="panel detail-card"><small>Carregado</small><strong>${numero(manifest.loaded_quantity)}</strong></div>
 </div><br>
-<section class="panel"><h3>Itens do Romaneio</h3><div class="table-wrap"><table class="mobile-card-table"><thead><tr><th>Produto</th><th>Código</th><th>Quantidade</th></tr></thead><tbody>
-${items.length ? items.map((item) => `<tr><td data-label="Produto"><strong>${esc(item.name)}</strong></td><td data-label="Código"><code>${esc(item.code || "—")}</code></td><td data-label="Quantidade">${numero(item.planned_quantity)}</td></tr>`).join("") : '<tr><td colspan="3" class="empty-cell">Nenhum item cadastrado.</td></tr>'}
+<section class="panel"><h3>Itens do Romaneio</h3><div class="table-wrap"><table><thead><tr><th>Produto</th><th>Código</th><th>Quantidade</th></tr></thead><tbody>
+${items.length ? items.map((item) => `<tr><td><strong>${esc(item.name)}</strong></td><td><code>${esc(item.code || "—")}</code></td><td>${numero(item.planned_quantity)}</td></tr>`).join("") : '<tr><td colspan="3" class="empty-cell">Nenhum item cadastrado.</td></tr>'}
 </tbody></table></div></section>${canCancel ? `<section class="panel"><div class="actions"><div><strong>Cancelamento do romaneio</strong><p>Use somente se o carregamento ainda não tiver começado.</p></div>${button("Cancelar romaneio", "cancel-manifest", "danger")}</div></section>` : ""}`;
 }
 
 const itemRow = (products, selectedId = "", quantity = 1) => `<tr class="manifest-item">
-  <td data-label="Produto"><select name="item_product"><option value="">Selecionar produto…</option>${products.map((product) => `<option value="${product.id}"${String(product.id) === String(selectedId) ? " selected" : ""}>${esc(product.name)}${product.code ? ` (${esc(product.code)})` : ""}</option>`).join("")}</select></td>
-  <td data-label="Quantidade"><input name="item_quantity" type="number" min="1" value="${Number(quantity) || 1}" /></td>
-  <td data-label="Ações">${button("Remover", "remove-item", "ghost")}</td>
+  <td><select name="item_product"><option value="">Selecionar produto…</option>${products.map((product) => `<option value="${product.id}"${String(product.id) === String(selectedId) ? " selected" : ""}>${esc(product.name)}${product.code ? ` (${esc(product.code)})` : ""}</option>`).join("")}</select></td>
+  <td><input name="item_quantity" type="number" min="1" value="${Number(quantity) || 1}" /></td>
+  <td>${button("Remover", "remove-item", "ghost")}</td>
 </tr>`;
 
 function industrialPcDate() {
@@ -108,7 +107,7 @@ export function importScreen(store) {
 <label>Motorista<input name="driver_name" /></label>
 </div></section><br>
 <section class="panel"><div class="panel-heading"><h3>Itens do Romaneio</h3>${button("Adicionar item", "add-item", "secondary")}</div>
-<div class="table-wrap"><table id="manifest-items" class="mobile-card-table"><thead><tr><th>Produto</th><th>Quantidade</th><th></th></tr></thead><tbody>${itemRow(products)}</tbody></table></div>
+<div class="table-wrap"><table id="manifest-items"><thead><tr><th>Produto</th><th>Quantidade</th><th></th></tr></thead><tbody>${itemRow(products)}</tbody></table></div>
 </section><br>${button("Cadastrar", "submit-manifest")}
 </form>
 <details class="panel csv-legacy"><summary>Importar romaneios por CSV</summary><p>Use o modelo separado por ponto e vírgula. Campos obrigatórios: <b>romaneio, data, placa, produto e quantidade</b>. Motorista e expedidor são opcionais. A data pode ser <b>DD/MM/AAAA</b> ou <b>AAAA-MM-DD</b>.</p><p><a class="text-link" href="assets/modelo-romaneio.csv" download>Baixar modelo CSV</a></p><form id="csv-form"><div class="file-picker"><input id="csv-file" class="file-input" name="file" type="file" accept=".csv,text/csv" required /><label class="button primary file-picker-button" for="csv-file">Escolher arquivo</label><span class="file-name" data-file-name>Nenhum arquivo escolhido</span></div><small>Máximo: 5 MB ou 10.000 linhas. Linhas repetidas do mesmo produto são somadas automaticamente.</small><div class="actions">${button("Importar e validar", "import-csv")}</div><div id="csv-import-feedback" class="import-feedback" role="status" aria-live="polite"></div></form></details>`;
@@ -128,7 +127,7 @@ export function manifestEdit(store) {
   <label>Placa do caminhão<input name="plate" required value="${esc(manifest.plate || "")}" /></label>
   <label>Expedidor<input name="expedidor" value="${esc(manifest.expedidor || "")}" /></label>
   <label>Motorista<input name="driver_name" value="${esc(manifest.driver_name || "")}" /></label>
-  </div></section><br><section class="panel"><div class="panel-heading"><h3>Itens do romaneio</h3>${button("Adicionar item", "add-item", "secondary")}</div><div class="table-wrap"><table id="manifest-items" class="mobile-card-table"><thead><tr><th>Produto</th><th>Quantidade</th><th></th></tr></thead><tbody>${rows}</tbody></table></div></section><br><div class="actions"><button class="button secondary" data-action="goto-manifests" type="button">Cancelar</button>${button("Salvar alterações", "submit-manifest-edit")}</div></form>`;
+  </div></section><br><section class="panel"><div class="panel-heading"><h3>Itens do romaneio</h3>${button("Adicionar item", "add-item", "secondary")}</div><div class="table-wrap"><table id="manifest-items"><thead><tr><th>Produto</th><th>Quantidade</th><th></th></tr></thead><tbody>${rows}</tbody></table></div></section><br><div class="actions"><button class="button secondary" data-action="goto-manifests" type="button">Cancelar</button>${button("Salvar alterações", "submit-manifest-edit")}</div></form>`;
 }
 export function division(store) {
   const manifest = store.state.manifestDetail;
