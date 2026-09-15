@@ -38,6 +38,37 @@
   font-size: 16px;
   line-height: 1.25;
 }
+.password-field {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+.password-field input {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.password-toggle {
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f7fafb;
+  color: var(--text);
+  padding: 0 12px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+}
+.password-toggle:hover,
+.password-toggle:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+.caps-lock-hint {
+  display: block;
+  margin-top: 6px;
+  color: #9a6414;
+  font-size: 12px;
+}
 .login-error {
   background: #fbe4e4;
   color: var(--red);

@@ -13,7 +13,7 @@
     <meta property="og:image" content="/assets/branding/trace-platform.png" />
     <title>Acesso ao sistema • Dallogix Trace</title>
     <link rel="stylesheet" href="css/styles.css?v=26" />
-    <link rel="stylesheet" href="css/light-theme.css?v=202609150020" />
+    <link rel="stylesheet" href="css/light-theme.css?v=202609150300" />
     <link rel="stylesheet" href="css/auth.css?v=4" />
   </head>
   <body>
@@ -26,8 +26,8 @@
         <p class="login-description">
           Acesse a operação local e acompanhe os carregamentos em tempo real.
         </p>
-        <div id="login-error"></div>
-        <form id="login-form" method="post" action="index.html">
+        <div id="login-error" role="alert" aria-live="assertive" tabindex="-1"></div>
+        <form id="login-form" method="post" action="#">
           <label
             >E-mail<input
               name="email"
@@ -36,19 +36,13 @@
               autocomplete="username"
               required
           /></label>
-          <label
-            >Senha<input
-              name="password"
-              type="password"
-              autocomplete="current-password"
-              required
-          /></label>
+          <label>Senha<div class="password-field"><input id="login-password" name="password" type="password" autocomplete="current-password" required /><button class="password-toggle" type="button" aria-label="Mostrar senha" aria-pressed="false">Mostrar</button></div><small id="login-capslock" class="caps-lock-hint" hidden>Caps Lock está ativado.</small></label>
           <button class="button primary login-button" type="submit">
             Entrar no sistema
           </button>
         </form>
       </section>
     </main>
-    <script data-cfasync="false" type="module" src="js/aplicacao.js?v=202609150020" data-page="login"></script>
+    <script data-cfasync="false" type="module" src="js/aplicacao.js?v=202609150300" data-page="login"></script>
   </body>
 </html>

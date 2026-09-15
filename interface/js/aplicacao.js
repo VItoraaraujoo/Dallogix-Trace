@@ -323,9 +323,11 @@ function renderLogin(message = "") {
   const box = el("#login-error");
   if (box) {
     box.setAttribute("role", "alert");
+    box.setAttribute("aria-live", "assertive");
     box.innerHTML = message
       ? `<div class="login-error">${esc(message)}</div>`
       : "";
+    if (message) box.focus();
   }
 }
 function hydrateChrome() {
@@ -1211,6 +1213,23 @@ function bindLoginForm() {
   const form = document.querySelector("#login-form");
   if (!form || form.dataset.bound === "1") return;
   form.dataset.bound = "1";
+  const password = form.querySelector("#login-password");
+  const passwordToggle = form.querySelector(".password-toggle");
+  const capsLock = form.querySelector("#login-capslock");
+  const updateCapsLock = (event) => {
+    if (capsLock) capsLock.hidden = !event.getModifierState?.("CapsLock");
+  };
+  password?.addEventListener("keydown", updateCapsLock);
+  password?.addEventListener("keyup", updateCapsLock);
+  passwordToggle?.addEventListener("click", () => {
+    if (!password) return;
+    const visible = password.type === "text";
+    password.type = visible ? "password" : "text";
+    passwordToggle.textContent = visible ? "Mostrar" : "Ocultar";
+    passwordToggle.setAttribute("aria-label", visible ? "Mostrar senha" : "Ocultar senha");
+    passwordToggle.setAttribute("aria-pressed", String(!visible));
+    password.focus();
+  });
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     const submit = form.querySelector('button[type="submit"]');
