@@ -1,5 +1,5 @@
 import { button, esc } from "../funcoes/html.js";
-import { pageHeader } from "../funcoes/view.js";
+import { pageHeader } from "../funcoes/view.js?v=202609150020";
 
 // Configurações no padrão da referência: Rede do cliente, Dalas (somente leitura)
 // e parâmetros da importação de romaneios (PDF).

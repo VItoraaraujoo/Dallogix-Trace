@@ -1,0 +1,74 @@
+const ESTADOS = {
+  AGUARDANDO: "Aguardando",
+  PREPARANDO: "Preparando",
+  CARREGANDO: "Carregando",
+  PAUSADO: "Pausado",
+  FINALIZANDO: "Finalizando",
+  FINALIZADO: "Finalizado",
+  EMERGENCIA: "Emergência",
+  ERRO: "Erro",
+};
+
+const COMANDOS = {
+  INICIAR_CARREGAMENTO: "Iniciar carregamento",
+  PAUSAR_CARREGAMENTO: "Pausar carregamento",
+  REVERSAO_ATIVAR: "Ativar reversão",
+  REVERSAO_DESATIVAR: "Desativar reversão",
+  EMERGENCIA: "Emergência",
+};
+
+const EVENTOS = {
+  QUANTIDADE_PLANEJADA_ATINGIDA: "Operação atingir 100%",
+};
+
+const STATUS_COMANDO = {
+  PENDENTE: "Pendente",
+  PROCESSANDO: "Processando",
+  CONCLUIDO: "Concluído",
+  SUCESSO: "Concluído",
+  ERRO: "Erro",
+  EXPIRADO: "Expirado",
+  CANCELADO: "Cancelado",
+};
+
+const STATUS_SINCRONIZACAO = {
+  PENDENTE: "Pendente",
+  PROCESSANDO: "Processando",
+  ENVIADO: "Enviado",
+  ERRO: "Com erro",
+};
+
+function labelFrom(map, value, fallback = "—") {
+  const normalized = String(value || "").trim().toUpperCase();
+  return map[normalized] || (normalized ? normalized.replaceAll("_", " ") : fallback);
+}
+
+export function rotuloEstado(value, fallback = "Sem operação") {
+  return labelFrom(ESTADOS, value, fallback);
+}
+
+export function rotuloComando(value) {
+  return labelFrom(COMANDOS, value);
+}
+
+export function rotuloEvento(value) {
+  return labelFrom(EVENTOS, value);
+}
+
+export function rotuloStatusComando(value) {
+  return labelFrom(STATUS_COMANDO, value);
+}
+
+export function rotuloStatusSincronizacao(value) {
+  return labelFrom(STATUS_SINCRONIZACAO, value);
+}
+
+export function rotuloStatusRomaneio(value) {
+  return labelFrom({
+    IMPORTADO: "Importado",
+    AGUARDANDO: "Aguardando",
+    EM_ANDAMENTO: "Em andamento",
+    FINALIZADO: "Finalizado",
+    CANCELADO: "Cancelado",
+  }, value);
+}

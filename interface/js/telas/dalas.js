@@ -1,8 +1,7 @@
 import { button, esc } from "../funcoes/html.js";
-import { pageHeader } from "../funcoes/view.js";
-
-const formatDate = (value) =>
-  value ? String(value).replace(" ", " • ").split(".")[0] : "—";
+import { dataHora, numero } from "../funcoes/formato.js";
+import { pageHeader } from "../funcoes/view.js?v=202609150020";
+import { rotuloComando, rotuloEstado, rotuloEvento, rotuloStatusComando } from "../funcoes/rotulos.js";
 
 function dalaStatusCell(equipment) {
   return `<div class="dala-status" data-equipment-id="${equipment.id}"><span class="status-dot"></span>Verificando…</div>`;
@@ -51,7 +50,7 @@ export function dalaView(store) {
   const percentage =
     planned > 0 ? Math.min(100, Math.round((loaded / planned) * 100)) : 0;
   const commands = store.state.dalaCommands || [];
-  const commandRows = commands.length ? commands.map((command) => `<tr><td>#${command.id}</td><td><code>${esc(command.command)}</code></td><td>${esc(command.status)}</td><td>${esc(command.requested_at || "—")}</td><td>${esc(command.response_message || "Aguardando resposta")}</td></tr>`).join("") : '<tr><td colspan="5" class="empty-cell">Nenhum comando registrado para esta Dala.</td></tr>';
+  const commandRows = commands.length ? commands.map((command) => `<tr><td>#${command.id}</td><td>${esc(rotuloComando(command.command))}<small><code>${esc(command.command)}</code></small></td><td>${esc(rotuloStatusComando(command.status))}</td><td>${esc(dataHora(command.requested_at))}</td><td>${esc(command.response_message || "Aguardando resposta")}</td></tr>`).join("") : '<tr><td colspan="5" class="empty-cell">Nenhum comando registrado para esta Dala.</td></tr>';
   return `<div class="title-row with-actions dala-page-header"><div><span class="dala-page-kicker">Cadastros / Dalas</span><h2>${esc(dala.name)}</h2><p class="muted">Identificador <code>${esc(dala.equipment_code)}</code></p></div><div class="actions"><button class="button secondary page-back" data-action="back-dala" type="button">← Voltar</button></div></div>
 <section class="panel dala-overview-panel"><div class="dala-overview-heading"><div><span class="dala-page-kicker">Configuração da Dala</span><h3>Comunicação e cadastro</h3></div><p id="dala-view-status" class="dala-status-line" data-equipment-id="${dala.id}"><span class="status-dot"></span>Verificando comunicação…</p></div>
 <div class="dala-info-grid">
@@ -61,13 +60,13 @@ export function dalaView(store) {
 <div class="dala-info-item"><small>Porta do CLP</small><strong>${dala.plc_port || "—"}</strong></div>
 <div class="dala-info-item"><small>Porta externa</small><strong>${dala.external_port || "—"}</strong></div>
 <div class="dala-info-item"><small>ID do cadastro</small><strong>${dala.id}</strong></div>
-<div class="dala-info-item"><small>Criada em</small><strong>${formatDate(dala.created_at)}</strong></div>
-<div class="dala-info-item"><small>Atualizada em</small><strong>${formatDate(dala.updated_at)}</strong></div>
+<div class="dala-info-item"><small>Criada em</small><strong>${dataHora(dala.created_at)}</strong></div>
+<div class="dala-info-item"><small>Atualizada em</small><strong>${dataHora(dala.updated_at)}</strong></div>
 </div></section>
 <section class="panel dala-stats-panel"><div class="panel-heading"><div><span class="dala-page-kicker">Operação</span><h3>Estatísticas da Dala</h3></div><span class="dala-last-signal">Último sinal: ${esc(operation.last_seen_at || "Sem sinal registrado")}</span></div><div class="grid four dala-stats-grid">
-  <div class="metric"><small>Estado da operação</small><strong>${esc(operation.carregamento_state || "Sem operação")}</strong></div>
+  <div class="metric"><small>Estado da operação</small><strong>${esc(rotuloEstado(operation.carregamento_state))}</strong></div>
   <div class="metric"><small>Romaneio atual</small><strong>${esc(operation.romaneio_number ? `#${operation.romaneio_number}` : "—")}</strong></div>
-  <div class="metric"><small>Carregado</small><strong>${loaded.toLocaleString("pt-BR")} / ${planned.toLocaleString("pt-BR")}</strong></div>
+  <div class="metric"><small>Carregado</small><strong>${numero(loaded)} / ${numero(planned)}</strong></div>
   <div class="metric"><small>Progresso</small><strong>${percentage}%</strong></div>
   </div></section>
 <section class="panel dala-diagnostics-panel"><div class="panel-heading"><div><span class="dala-page-kicker">Monitoramento</span><h3>Diagnóstico do CLP</h3><p class="muted">Comandos enviados, status do gateway e retorno registrado.</p></div><button class="button secondary" data-action="reload-dala-diagnostics" data-id="${dala.id}" type="button">Atualizar</button></div><div class="table-wrap"><table><thead><tr><th>ID</th><th>Comando</th><th>Status</th><th>Solicitado em</th><th>Resposta</th></tr></thead><tbody>${commandRows}</tbody></table></div></section>`;
@@ -92,7 +91,7 @@ export function dalaActions(store) {
     <td><div class="action-order"><span>${item.ordem}</span>${canManage ? `<button class="icon-button" data-action="move-dala-action" data-id="${item.id}" data-direction="up" type="button"${index === 0 ? " disabled" : ""} aria-label="Mover para cima">↑</button><button class="icon-button" data-action="move-dala-action" data-id="${item.id}" data-direction="down" type="button"${index === actions.length - 1 ? " disabled" : ""} aria-label="Mover para baixo">↓</button>` : ""}</div></td>
     <td><code>${esc(commandLabel[item.comando] || item.comando)}</code></td><td><strong>${esc(item.rotulo)}</strong></td><td>${esc(item.cor[0] + item.cor.slice(1).toLowerCase())}</td><td>${Number(item.visivel) ? "Sim" : "Não"}</td><td>${esc(item.modo[0] + item.modo.slice(1).toLowerCase())}</td>
     ${canManage ? `<td><div class="table-actions"><button class="text-link" data-action="edit-dala-action" data-id="${item.id}" type="button">Editar</button><button class="text-link danger-link" data-action="delete-dala-action" data-id="${item.id}" data-name="${esc(item.rotulo)}" type="button">Excluir</button></div></td>` : ""}</tr>`).join("") : `<tr><td colspan="${canManage ? 7 : 6}" class="empty-cell">Nenhuma ação configurada.</td></tr>`;
-  const triggerRows = triggers.length ? triggers.map((trigger) => `<tr><td>${esc(trigger.evento === "QUANTIDADE_PLANEJADA_ATINGIDA" ? "Operação atingir 100%" : trigger.evento.replaceAll("_", " "))}</td><td>${esc(trigger.acao_rotulo || "Nenhuma ação")}</td>${canManage ? `<td><div class="table-actions"><button class="text-link" data-action="edit-dala-trigger" data-id="${trigger.id}" type="button">Editar</button></div></td>` : ""}</tr>`).join("") : `<tr><td colspan="${canManage ? 3 : 2}" class="empty-cell">Nenhum gatilho configurado.</td></tr>`;
+  const triggerRows = triggers.length ? triggers.map((trigger) => `<tr><td>${esc(rotuloEvento(trigger.evento))}</td><td>${esc(trigger.acao_rotulo || "Nenhuma ação")}</td>${canManage ? `<td><div class="table-actions"><button class="text-link" data-action="edit-dala-trigger" data-id="${trigger.id}" type="button">Editar</button></div></td>` : ""}</tr>`).join("") : `<tr><td colspan="${canManage ? 3 : 2}" class="empty-cell">Nenhum gatilho configurado.</td></tr>`;
   const dalaLabel = dala.equipment_code || dala.name || "Dala";
   return `<div class="title-row with-actions dala-page-header"><div><h2>Ações — ${esc(dalaLabel)}</h2></div><div class="actions"><button class="button secondary page-back" data-action="back-dala" type="button">← Voltar</button>${canManage ? `<button class="button secondary" data-action="new-dala-trigger" type="button">Novo gatilho</button><button class="button primary" data-action="new-dala-action" type="button">Nova ação</button>` : ""}</div></div>
   <section class="panel reference-table-panel"><div class="table-wrap"><table class="dala-actions-table"><thead><tr><th>Ordem</th><th>Comando</th><th>Rótulo</th><th>Cor</th><th>Visível</th><th>Modo</th>${canManage ? "<th>Ações</th>" : ""}</tr></thead><tbody>${actionRows}</tbody></table></div></section>

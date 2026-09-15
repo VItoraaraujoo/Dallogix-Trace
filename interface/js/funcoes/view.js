@@ -1,4 +1,6 @@
 import { button, esc } from "./html.js";
+import { data, numero, relativo } from "./formato.js";
+import { rotuloEstado, rotuloStatusRomaneio } from "./rotulos.js";
 
 export function pageHeader(kicker, title, description, action = "") {
   return `<div class="title-row"><div><span class="kicker">${esc(kicker)}</span><h2>${esc(title)}</h2><p>${esc(description)}</p></div>${action}</div>`;
@@ -21,24 +23,17 @@ export function statuses(store = null) {
     devices.find((item) => item.device_type === type)?.status ||
     (type === "SERVER" ? "LOCAL" : "NÃO REGISTRADO");
   const tone = (value) => (["ONLINE", "LOCAL"].includes(value) ? "OK" : value);
-  return `<div class="status">${known.map((type) => `<span>● ${labels[type]} <b>${esc(tone(status(type)))}</b></span>`).join("")}</div>`;
+  return `<div class="status">${known.map((type) => `<span>● ${labels[type]} <b data-live-status="${type}">${esc(tone(status(type)))}</b></span>`).join("")}</div>`;
 }
 export function progress(store) {
   const loaded = Number(store.state.loaded) || 0;
   const planned = Number(store.state.planned) || 0;
   const pct =
     planned > 0 ? Math.min(100, Math.round((loaded / planned) * 100)) : 0;
-  return `<div class="progress"><i style="width:${pct}%"></i></div><div class="progress-label"><span>${pct}% concluído</span><span>${loaded.toLocaleString("pt-BR")} / ${planned.toLocaleString("pt-BR")} sacas</span></div>`;
+  return `<div class="progress"><i data-live="progress-bar" style="width:${pct}%"></i></div><div class="progress-label"><span data-live="progress-percent">${pct}% concluído</span><span data-live="progress-count">${numero(loaded)} / ${numero(planned)} sacas</span></div>`;
 }
 export function badge(status) {
-  const labels = {
-    IMPORTADO: "Importado",
-    AGUARDANDO: "Aguardando",
-    EM_ANDAMENTO: "Em andamento",
-    FINALIZADO: "Finalizado",
-    CANCELADO: "Cancelado",
-  };
-  const label = labels[status] || status;
+  const label = rotuloStatusRomaneio(status);
   const tone = ["FINALIZADO", "Finalizado"].includes(status)
     ? "green"
     : ["CANCELADO", "Cancelado"].includes(status)
@@ -64,9 +59,6 @@ export function manifestStatusBadge(row) {
   return badge(row.status);
 }
 
-const formatDate = (value) =>
-  value ? String(value).split("-").reverse().join("/") : "—";
-
 export function manifestsTable(rows, userRole = "") {
   const list = Array.isArray(rows) ? rows : [];
   const body = list.length
@@ -83,7 +75,7 @@ export function manifestsTable(rows, userRole = "") {
               ? `<button class="button primary small" data-action="resume-loading" data-id="${r.id}" data-loading-id="${r.active_loading_id || ""}" type="button">${r.active_state === "PAUSADO" ? "Continuar" : "Retomar"}</button>`
               : "";
           return `<tr>
-          <td>${formatDate(r.scheduled_date)}</td>
+          <td>${data(r.scheduled_date)}</td>
           <td><strong>${esc(r.number)}</strong></td>
           <td>${esc(r.expedidor || "—")}</td>
           <td>${manifestStatusBadge(r)}</td>
@@ -95,17 +87,6 @@ export function manifestsTable(rows, userRole = "") {
     : '<tr><td colspan="6">Nenhum romaneio encontrado para os filtros informados.</td></tr>';
   return `<div class="panel table-wrap"><table><thead><tr><th>Data do carregamento</th><th>Código do romaneio</th><th>Expedidor</th><th>Status</th><th>Ações</th><th>Operação</th></tr></thead><tbody>${body}</tbody></table></div>`;
 }
-
-const loadingStateLabels = {
-  AGUARDANDO: "Aguardando",
-  PREPARANDO: "Preparando",
-  CARREGANDO: "Carregando",
-  PAUSADO: "Pausado",
-  FINALIZANDO: "Finalizando",
-  FINALIZADO: "Finalizado",
-  EMERGENCIA: "Emergência",
-  ERRO: "Erro",
-};
 
 export function deviceBadge(value) {
   const normalized = String(value || "DESCONHECIDO").toUpperCase();
@@ -130,20 +111,17 @@ function machineCard(machine) {
   const planned = Number(machine.planned_quantity || 0);
   const pct =
     planned > 0 ? Math.min(100, Math.round((loaded / planned) * 100)) : 0;
-  const state =
-    loadingStateLabels[machine.carregamento_state] ||
-    machine.carregamento_state ||
-    "Ociosa";
+  const state = rotuloEstado(machine.carregamento_state, "Ociosa");
   return `<article class="machine-card ${String(machine.clp_status || "").toUpperCase() === "ONLINE" ? "" : "is-offline"}">
     <header><div><strong>${esc(machine.name)}</strong><small>${esc(machine.equipment_code)}</small></div>${deviceBadge(machine.clp_status)}</header>
     <dl>
       <div><dt>Romaneio</dt><dd>${machine.romaneio_number ? "#" + esc(machine.romaneio_number) : "—"}</dd></div>
       <div><dt>Caminhão</dt><dd>${machine.plate ? esc(machine.plate) : "—"}</dd></div>
       <div><dt>Estado</dt><dd>${esc(state)}</dd></div>
-      <div><dt>Último sinal</dt><dd>${machine.last_seen_at ? esc(machine.last_seen_at) : "—"}</dd></div>
+      <div><dt>Último sinal</dt><dd>${esc(relativo(machine.last_seen_at))}</dd></div>
     </dl>
     <div class="progress"><i style="width:${pct}%"></i></div>
-    <div class="progress-label"><span>${pct}% concluído</span><span>${loaded.toLocaleString("pt-BR")} / ${planned.toLocaleString("pt-BR")} sacas</span></div>
+    <div class="progress-label"><span>${pct}% concluído</span><span>${numero(loaded)} / ${numero(planned)} sacas</span></div>
   </article>`;
 }
 

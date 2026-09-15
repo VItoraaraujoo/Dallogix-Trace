@@ -5043,6 +5043,45 @@ body.mobile-menu-open {
   }
 }
 
+/* Chrome dinâmico: evita exibir links e estados de conexão antes da hidratação. */
+.sidebar nav {
+  visibility: hidden;
+}
+
+.sidebar nav.is-hydrated {
+  visibility: visible;
+}
+
+.topbar h1 .brand-context {
+  font-weight: inherit;
+}
+
+.topbar h1 .page-context {
+  color: var(--muted);
+  font-size: 0.72em;
+  font-weight: 600;
+}
+
+.local.is-degraded {
+  background: #fff4d6;
+  border-color: #f0d38a;
+  color: #8a6100;
+}
+
+.local.is-offline {
+  background: #fde8eb;
+  border-color: #efb9c1;
+  color: #a33443;
+}
+
+.local.is-degraded i {
+  background: #d79a00;
+}
+
+.local.is-offline i {
+  background: var(--red);
+}
+
 /* Organização da referência da tela de Dalas, preservando a paleta global. */
 .dalas-reference-header {
   margin-bottom: 30px;

@@ -1,8 +1,10 @@
 import { ArmazenamentoTrace } from "./classes/ArmazenamentoTrace.js?v=202609140210";
 import { FORM_ACTIONS } from "./constantes/acoes.js?v=202609140210";
 import { el, esc } from "./funcoes/html.js";
+import { numero } from "./funcoes/formato.js";
+import { rotuloEstado } from "./funcoes/rotulos.js";
 import { settings } from "./telas/configuracoes.js?v=202609140210";
-import { dalaActions, dalaEdit, dalas, dalaView } from "./telas/dalas.js?v=202609142300";
+import { dalaActions, dalaEdit, dalas, dalaView } from "./telas/dalas.js?v=202609150020";
 import { company } from "./telas/empresa.js";
 import { companies } from "./telas/empresas.js";
 import { errorLogs } from "./telas/logs.js";
@@ -22,13 +24,14 @@ import {
     manifests,
     manifestView,
     work,
-} from "./telas/operacoes.js?v=202609142245";
+} from "./telas/operacoes.js?v=202609150020";
 import { dashboard } from "./telas/painel.js";
 import { users } from "./telas/usuarios.js";
 import { atualizarStatusDasDalas, linhaItemRomaneio } from "./controladores/operacao.js";
 
 const store = new ArmazenamentoTrace();
 let renderRequestId = 0;
+let workViewSignature = "";
 const screens = {
   dashboard,
   manifests,
@@ -143,6 +146,31 @@ const NAV_GROUPS = [
     ],
   ],
 ];
+const PAGE_LABELS = {
+  dashboard: "Dashboard",
+  manifests: "Romaneios",
+  import: "Importar romaneio",
+  division: "Divisão de carga",
+  work: "Operação",
+  occurrences: "Ocorrências",
+  summary: "Resumo final",
+  history: "Histórico",
+  products: "Produtos",
+  alerts: "Alertas",
+  emergency: "Emergência",
+  settings: "Configurações",
+  dalas: "Dalas",
+  dala: "Visualizar Dala",
+  "dala-edit": "Editar Dala",
+  "dala-actions": "Ações da Dala",
+  manifest: "Visualizar romaneio",
+  "manifest-edit": "Editar romaneio",
+  companies: "Empresas",
+  "master-home": "Visão geral",
+  company: "Empresa",
+  users: "Usuários",
+  "error-logs": "Logs de erros",
+};
 // Os arquivos HTML continuam acessíveis diretamente, mas, após o primeiro carregamento,
 // as mudanças de tela usam o History API para não reiniciar toda a aplicação.
 const initialPage =
@@ -151,6 +179,8 @@ let currentPage = initialPage;
 let authenticatedUser = null;
 let workTimer = null;
 let workPolling = false;
+let localHealthTimer = null;
+let localHealthRequest = false;
 
 function sidebarCollapsed() {
   try {
@@ -241,6 +271,54 @@ function navigationIcon(page) {
   return icons[page] || icons.dashboard;
 }
 
+function setLocalIndicator(state, checkedAt = null) {
+  const labels = {
+    online: "Sistema local online",
+    degraded: "Sistema local sem confirmação",
+    offline: "Sistema local sem comunicação",
+  };
+  const detail = checkedAt
+    ? `Última verificação: ${new Date(checkedAt).toLocaleTimeString("pt-BR")}`
+    : "Aguardando verificação";
+  document.querySelectorAll(".local").forEach((indicator) => {
+    indicator.classList.remove("is-online", "is-degraded", "is-offline");
+    indicator.classList.add(`is-${state}`);
+    indicator.innerHTML = `<i></i> ${labels[state] || labels.degraded}`;
+    indicator.title = detail;
+    indicator.setAttribute("aria-label", `${labels[state] || labels.degraded}. ${detail}`);
+  });
+}
+
+async function refreshLocalIndicator() {
+  if (localHealthRequest) return;
+  if (!navigator.onLine) {
+    setLocalIndicator("offline");
+    return;
+  }
+  localHealthRequest = true;
+  try {
+    const response = await fetch(`/api/health.php?ts=${Date.now()}`, {
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    });
+    const result = await response.json().catch(() => ({}));
+    const state = response.ok && result.status === "ok" ? "online" : "degraded";
+    setLocalIndicator(state, result.checked_at || Date.now());
+  } catch (error) {
+    setLocalIndicator("offline");
+  } finally {
+    localHealthRequest = false;
+  }
+}
+
+function installLocalIndicator() {
+  if (localHealthTimer) return;
+  window.addEventListener("online", refreshLocalIndicator);
+  window.addEventListener("offline", refreshLocalIndicator);
+  refreshLocalIndicator();
+  localHealthTimer = window.setInterval(refreshLocalIndicator, 30000);
+}
+
 function renderLogin(message = "") {
   const box = el("#login-error");
   if (box) {
@@ -288,6 +366,14 @@ function hydrateChrome() {
       if (!permitted.length) return "";
       return `<span class="nav-label">${esc(group)}</span>${permitted.map(([page, label]) => `<a class="nav-item${page === currentPage ? " active" : ""}${["dashboard", "dalas"].includes(page) ? " nav-section-end" : ""}" data-page="${page}" data-label="${esc(label)}" href="${pagePath(page)}"><span class="nav-icon">${navigationIcon(page)}</span><span class="nav-text">${esc(label)}</span></a>`).join("")}`;
     }).join("");
+  if (nav) nav.classList.add("is-hydrated");
+  const pageLabel = PAGE_LABELS[currentPage] || "Dallogix Trace";
+  document.title = `${pageLabel} • Dallogix Trace`;
+  const pageHeading = document.querySelector(".topbar h1");
+  if (pageHeading) {
+    pageHeading.innerHTML = `<span class="brand-context">TracePlatform</span><small>/ Dallogix Trace</small><span class="page-context"> · ${esc(pageLabel)}</span>`;
+  }
+  installLocalIndicator();
   const userRole = normalizeRole(authenticatedUser?.role);
   el("#user-avatar").textContent = (authenticatedUser?.name || "A")
     .slice(0, 1)
@@ -305,6 +391,7 @@ function render() {
   bindActions();
   bindForms();
   if (["dalas", "dala"].includes(currentPage)) atualizarStatusDasDalas(store);
+  workViewSignature = currentPage === "work" ? workStructureSignature() : "";
   if (currentPage === "work") startWorkPolling();
   else stopWorkPolling();
 }
@@ -328,13 +415,68 @@ function startWorkPolling() {
         store.loadActiveLoading(store.state.selectedLoadingId),
         store.loadMonitoring(),
       ]);
-      render();
+      const nextSignature = workStructureSignature();
+      if (nextSignature !== workViewSignature) {
+        render();
+      } else {
+        refreshWorkLiveView();
+      }
     } catch (error) {
       /* mantém o último estado visível */
     } finally {
       workPolling = false;
     }
   }, 2000);
+}
+function workStructureSignature() {
+  const pending = (store.state.pendingReadings || []).map((reading) => reading.id).join(",");
+  const command = store.state.plcCommand;
+  return JSON.stringify([
+    store.state.selectedLoadingId || null,
+    store.state.emergency,
+    store.state.operationalState,
+    pending,
+    command?.status || null,
+    command?.response_message || null,
+    store.clpDisponivel(),
+  ]);
+}
+function refreshWorkLiveView() {
+  const loaded = Number(store.state.loaded) || 0;
+  const planned = Number(store.state.planned) || 0;
+  const remaining = Math.max(0, planned - loaded);
+  const percent = planned > 0 ? Math.min(100, Math.round((loaded / planned) * 100)) : 0;
+  const values = {
+    planned: numero(planned),
+    loaded: numero(loaded),
+    remaining: numero(remaining),
+    "loaded-secondary": numero(loaded),
+    "operational-state": rotuloEstado(store.state.operationalState),
+    "progress-percent": `${percent}% concluído`,
+    "progress-count": `${numero(loaded)} / ${numero(planned)} sacas`,
+  };
+  Object.entries(values).forEach(([key, value]) => {
+    document.querySelectorAll(`[data-live="${key}"]`).forEach((node) => {
+      node.textContent = String(value);
+    });
+  });
+  const progressBar = document.querySelector('[data-live="progress-bar"]');
+  if (progressBar) progressBar.style.width = `${percent}%`;
+  const statuses = store.state.monitoring?.dispositivos || [];
+  const selectedEquipmentId = Number(store.state.equipmentId) || null;
+  const statusByType = Object.fromEntries(
+    ["SENSOR", "SCANNER", "CLP", "CAMERA", "SERVER"].map((type) => {
+      const device = statuses.find((item) =>
+        item.device_type === type &&
+        (!selectedEquipmentId || Number(item.equipment_id) === selectedEquipmentId),
+      );
+      const value = device?.status || (type === "SERVER" ? "OK" : "NÃO REGISTRADO");
+      return [type, ["ONLINE", "LOCAL"].includes(value) ? "OK" : value];
+    }),
+  );
+  document.querySelectorAll("[data-live-status]").forEach((node) => {
+    node.textContent = statusByType[node.dataset.liveStatus] || "NÃO REGISTRADO";
+  });
 }
 function installInteractionGuards() {
   document.addEventListener("dragstart", (event) => {
@@ -1092,6 +1234,38 @@ function bindLoginForm() {
       if (!response.ok || result.authenticated !== true) {
         renderLogin(result.error || "E-mail ou senha inválidos.");
         return;
+      }
+      if (result.password_change_required) {
+        const newPassword = prompt(
+          "Esta senha é temporária. Informe uma nova senha (mínimo 10 caracteres):",
+        );
+        if (newPassword === null) {
+          renderLogin("Troque a senha temporária antes de continuar.");
+          return;
+        }
+        const confirmation = prompt("Confirme a nova senha:");
+        if (newPassword.length < 10 || newPassword !== confirmation) {
+          renderLogin("As senhas não coincidem ou têm menos de 10 caracteres.");
+          return;
+        }
+        const passwordResponse = await fetch("/api/trocar_senha.php", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-Token": result.csrf_token,
+          },
+          body: JSON.stringify({
+            current_password: data.password,
+            new_password: newPassword,
+          }),
+        });
+        const passwordResult = await passwordResponse.json().catch(() => ({}));
+        if (!passwordResponse.ok) {
+          renderLogin(passwordResult.error || "Não foi possível atualizar a senha.");
+          return;
+        }
+        result.user = passwordResult.user;
+        result.csrf_token = passwordResult.csrf_token;
       }
       authenticatedUser = result.user;
       store.setUser(authenticatedUser);

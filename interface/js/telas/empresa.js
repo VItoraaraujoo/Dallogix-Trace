@@ -1,5 +1,5 @@
 import { button, esc } from "../funcoes/html.js";
-import { pageHeader, machineGrid, deviceBadge } from "../funcoes/view.js";
+import { pageHeader, machineGrid, deviceBadge } from "../funcoes/view.js?v=202609150020";
 
 export function company(store) {
   const detail = store.state.companyDetail;

@@ -1,5 +1,5 @@
 import { button, esc } from "../funcoes/html.js";
-import { pageHeader, manifestsTable, progress } from "../funcoes/view.js";
+import { pageHeader, manifestsTable, progress } from "../funcoes/view.js?v=202609150020";
 export function occurrences(store) {
   const recent = store.state.monitoring?.ocorrencias || [];
   return `${pageHeader("Acompanhamento / qualidade", "Ocorrências", "Registre desvios e paradas relacionadas à carga atual.")}<div class="grid two"><section class="panel"><h3>Ocorrência do lote</h3><form id="occurrence-form"><label>Tipo<select name="type"><option>Saca rasgada</option><option>Saca avariada</option><option>Parada de máquina</option><option>Limpeza de linha</option><option>Queda de energia</option><option>Ajuste de equipamento</option><option>Falha elétrica</option></select></label><label>Quantidade<input name="quantity" type="number" min="1" value="1" /></label><label>Observação<textarea name="description" placeholder="Descreva o que aconteceu..."></textarea></label>${button("Salvar ocorrência", "save-occurrence")}</form></section><section class="panel"><h3>Registros recentes</h3><ul>${recent.length ? recent.map((item) => `<li>${esc(item.type)} — ${Number(item.quantity) || 0} unidade(s)<small>${esc(item.description || "Sem observação")}</small></li>`).join("") : "<li>Nenhuma ocorrência registrada.</li>"}</ul></section></div>`;

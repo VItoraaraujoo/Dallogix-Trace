@@ -1,5 +1,5 @@
 import { esc, button } from "../funcoes/html.js";
-import { pageHeader } from "../funcoes/view.js";
+import { pageHeader } from "../funcoes/view.js?v=202609150020";
 
 export function errorLogs(store) {
   const rows = store.state.errorLogs || [];

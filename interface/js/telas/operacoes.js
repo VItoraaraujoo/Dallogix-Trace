@@ -1,10 +1,12 @@
 import { button, esc } from "../funcoes/html.js";
+import { data, numero } from "../funcoes/formato.js";
+import { rotuloEstado, rotuloStatusComando } from "../funcoes/rotulos.js";
 import {
   pageHeader,
   manifestsTable,
   progress,
   statuses,
-} from "../funcoes/view.js";
+} from "../funcoes/view.js?v=202609150020";
 
 const STATUS_OPTIONS = [
   ["", "Todos os status"],
@@ -53,19 +55,17 @@ export function manifestView(store) {
       : "";
   const canCancel = ["ADMIN_EMPRESA", "SUPERVISOR"].includes(store.state.userRole) && ["IMPORTADO", "AGUARDANDO"].includes(manifest.status);
   const canCancelInProgress = ["ADMIN_EMPRESA", "SUPERVISOR"].includes(store.state.userRole) && manifest.status === "EM_ANDAMENTO" && manifest.active_loading_id;
-  const formatDate = (value) =>
-    value ? String(value).split("-").reverse().join("/") : "—";
   return `<div class="title-row with-actions has-back"><button class="button secondary page-back" data-action="goto-manifests" type="button">← Voltar</button><div><h2>Romaneio ${esc(manifest.number)}</h2></div><div class="actions">${auditReport}${canPrepare ? `<button class="button primary" data-action="prepare-manifest" data-id="${manifest.id}" type="button">Preparar carregamento</button>` : ""}${canCancelInProgress ? `<button class="button danger" data-action="cancel-manifest-progress" data-id="${manifest.id}" type="button">Cancelar operação</button>` : ""}</div></div>
 <div class="grid two detail-cards">
-<div class="panel detail-card"><small>Data do carregamento</small><strong>${formatDate(manifest.scheduled_date)}</strong></div>
+<div class="panel detail-card"><small>Data do carregamento</small><strong>${data(manifest.scheduled_date)}</strong></div>
 <div class="panel detail-card"><small>Expedidor</small><strong>${esc(manifest.expedidor || "—")}</strong></div>
 <div class="panel detail-card"><small>Placa do caminhão</small><strong>${esc(manifest.plate || "—")}</strong></div>
 <div class="panel detail-card"><small>Motorista</small><strong>${esc(manifest.driver_name || "—")}</strong></div>
-<div class="panel detail-card"><small>Programado</small><strong>${Number(manifest.planned_quantity).toLocaleString("pt-BR")}</strong></div>
-<div class="panel detail-card"><small>Carregado</small><strong>${Number(manifest.loaded_quantity).toLocaleString("pt-BR")}</strong></div>
+<div class="panel detail-card"><small>Programado</small><strong>${numero(manifest.planned_quantity)}</strong></div>
+<div class="panel detail-card"><small>Carregado</small><strong>${numero(manifest.loaded_quantity)}</strong></div>
 </div><br>
 <section class="panel"><h3>Itens do Romaneio</h3><div class="table-wrap"><table><thead><tr><th>Produto</th><th>Código</th><th>Quantidade</th></tr></thead><tbody>
-${items.length ? items.map((item) => `<tr><td><strong>${esc(item.name)}</strong></td><td><code>${esc(item.code || "—")}</code></td><td>${Number(item.planned_quantity).toLocaleString("pt-BR")}</td></tr>`).join("") : '<tr><td colspan="3" class="empty-cell">Nenhum item cadastrado.</td></tr>'}
+${items.length ? items.map((item) => `<tr><td><strong>${esc(item.name)}</strong></td><td><code>${esc(item.code || "—")}</code></td><td>${numero(item.planned_quantity)}</td></tr>`).join("") : '<tr><td colspan="3" class="empty-cell">Nenhum item cadastrado.</td></tr>'}
 </tbody></table></div></section>${canCancel ? `<section class="panel"><div class="actions"><div><strong>Cancelamento do romaneio</strong><p>Use somente se o carregamento ainda não tiver começado.</p></div>${button("Cancelar romaneio", "cancel-manifest", "danger")}</div></section>` : ""}`;
 }
 
@@ -156,23 +156,15 @@ export function division(store) {
   );
   return `${pageHeader("Operação / planejamento", "Preparar carregamento", "Defina o caminhão e a Dala antes de liberar a operação.")}
   <section class="panel compact-help"><strong>Regra de segurança</strong><p>Uma Dala e um caminhão não podem ter dois carregamentos ativos. A confirmação abaixo apenas prepara a operação no banco local; o motor continua sob intertravamento do CLP.</p></section><br>
-  <div class="grid three"><div class="panel metric"><small>Romaneio</small><strong>${esc(manifest.number)}</strong></div><div class="panel metric"><small>Total programado</small><strong>${total.toLocaleString("pt-BR")}</strong></div><div class="panel metric"><small>Caminhões disponíveis</small><strong>${trucks.length}</strong></div></div><br>
+  <div class="grid three"><div class="panel metric"><small>Romaneio</small><strong>${esc(manifest.number)}</strong></div><div class="panel metric"><small>Total programado</small><strong>${numero(total)}</strong></div><div class="panel metric"><small>Caminhões disponíveis</small><strong>${numero(trucks.length)}</strong></div></div><br>
   <form id="prepare-loading-form" class="panel"><div class="grid two"><label>Caminhão<select name="truck_id" required ${truckOptions ? "" : "disabled"}>${truckOptions || "<option>Nenhum caminhão cadastrado</option>"}</select></label><label>Dala<select name="equipment_id" required ${availableEquipment ? "" : "disabled"}>${equipmentOptions || "<option>Nenhuma Dala cadastrada</option>"}</select></label></div>${availableEquipment ? "" : '<div class="alert-box" role="alert">Todas as Dalas possuem carregamentos ativos. Finalize ou libere uma operação antes de preparar outra.</div>'}<div class="actions"><button class="button secondary" data-action="back-manifest" type="button">Cancelar</button>${button("Preparar operação", "prepare-loading", "primary", availableEquipment && truckOptions ? "" : "disabled")}</div></form>
-  <section class="panel"><h3>Produtos previstos</h3><div class="table-wrap"><table><thead><tr><th>Produto</th><th>Quantidade</th></tr></thead><tbody>${(manifest.items || []).map((item) => `<tr><td>${esc(item.name)}</td><td>${Number(item.planned_quantity).toLocaleString("pt-BR")}</td></tr>`).join("") || '<tr><td colspan="2">Nenhum item informado.</td></tr>'}</tbody></table></div></section>`;
+  <section class="panel"><h3>Produtos previstos</h3><div class="table-wrap"><table><thead><tr><th>Produto</th><th>Quantidade</th></tr></thead><tbody>${(manifest.items || []).map((item) => `<tr><td>${esc(item.name)}</td><td>${numero(item.planned_quantity)}</td></tr>`).join("") || '<tr><td colspan="2">Nenhum item informado.</td></tr>'}</tbody></table></div></section>`;
 }
 function loadingSelection(store) {
-  const labels = {
-    AGUARDANDO: "Aguardando",
-    PREPARANDO: "Preparando",
-    CARREGANDO: "Carregando",
-    PAUSADO: "Pausado",
-    FINALIZANDO: "Finalizando",
-    EMERGENCIA: "Emergência",
-  };
   const cards = (store.state.activeLoadings || [])
     .map(
       (loading) =>
-        `<button class="dala-selection-card" data-action="select-loading" data-id="${loading.id}" type="button"><span class="kicker">${esc(loading.equipment_code || "Dala")}</span><strong>${esc(loading.romaneio_number || "Sem romaneio")}</strong><span>Caminhão ${esc(loading.plate || "—")}</span><b>${esc(labels[loading.state] || loading.state)}</b><small>Selecionar esta Dala</small></button>`,
+        `<button class="dala-selection-card" data-action="select-loading" data-id="${loading.id}" type="button"><span class="kicker">${esc(loading.equipment_code || "Dala")}</span><strong>${esc(loading.romaneio_number || "Sem romaneio")}</strong><span>Caminhão ${esc(loading.plate || "—")}</span><b>${esc(rotuloEstado(loading.state))}</b><small>Selecionar esta Dala</small></button>`,
     )
     .join("");
   return `${pageHeader("Operação", "Selecionar Dala", "Escolha a Dala que será acompanhada e controlada nesta tela.")}<section class="dala-selection-screen"><div class="dala-selection-heading"><span class="kicker">Operações disponíveis</span><h3>Qual Dala você deseja operar?</h3><p>Cada seleção mantém contagem, comandos e emergência separados.</p></div><div class="dala-selection-grid">${cards || '<p class="empty-cell">Nenhum carregamento disponível.</p>'}</div></section>`;
@@ -189,13 +181,6 @@ function workControls(store) {
   const bloqueioComando = clpDisponivel && store.state.loadingId
     ? ""
     : `disabled aria-disabled="true" title="${store.state.loadingId ? "CLP sem comunicação" : "Nenhum carregamento selecionado"}"`;
-  const commandLabels = {
-    PENDENTE: "Aguardando gateway",
-    PROCESSANDO: "Validando no gateway",
-    APLICADO: "Aplicado pelo gateway",
-    REJEITADO: "Rejeitado pelo gateway",
-    ERRO: "Erro no gateway",
-  };
   const loadingPicker = `<div class="work-back-row"><button class="button secondary" data-action="goto-manifests" type="button">← Voltar</button></div>`;
   const pendingReadings = store.state.pendingReadings || [];
   const manualIdentification = pendingReadings.length
@@ -218,16 +203,16 @@ function workControls(store) {
   const badge =
     store.state.operationalState === "EMERGENCIA"
       ? '<span class="badge red">Emergência ativa</span>'
-      : `<span class="badge yellow">${store.state.operationalState}</span>`;
+      : `<span class="badge yellow">${esc(rotuloEstado(store.state.operationalState))}</span>`;
   const commandPanel =
     canReverse && command
-      ? `<li>Reversão <small>${esc(commandLabels[command.status] || command.status)}${command.response_message ? ` • ${esc(command.response_message)}` : ""}</small></li>`
+      ? `<li>Reversão <small>${esc(rotuloStatusComando(command.status))}${command.response_message ? ` • ${esc(command.response_message)}` : ""}</small></li>`
       : "";
   const emergencyPanel = `<div class="emergency"><h2>EMERGÊNCIA ATIVA</h2><p>CONTAGEM BLOQUEADA</p><strong>Aguardando liberação do CLP</strong>${canUnlock ? button("Desbloquear máquina", "unlock", "secondary", bloqueioComando) : ""}</div>`;
   const avisoClp = clpDisponivel
     ? ""
     : `<div class="alert-box" role="alert"><strong>Comandos bloqueados.</strong> ${esc(store.mensagemClpIndisponivel())}</div>`;
-  return `${pageHeader(`Operação / ${equipmentLabel(store)}`, "Tela de Trabalho", `Romaneio #${store.state.romaneio} para o caminhão ${store.state.truck}.`, badge)}${loadingPicker}${statuses(store)}${avisoClp}${manualIdentification}${store.state.emergency ? emergencyPanel : `<div class="grid two"><section class="panel"><span class="kicker">Produto atual</span><h3>Produto do romaneio</h3><p>Leituras vinculadas ao carregamento atual</p><div class="grid three"><div class="metric"><small>Programado</small><strong>${store.state.planned}</strong></div><div class="metric"><small>Carregado</small><strong>${store.state.loaded}</strong></div><div class="metric"><small>Faltam</small><strong>${left}</strong></div></div>${progress(store)}${left <= 5 && left > 0 ? '<div class="alert-box">Faltam 5 sacas ou menos. Reduza o envio.</div>' : ""}<div class="actions">${controls}</div></section><aside class="panel"><h3>Estado persistido</h3><ul><li>Estado atual <small>${store.state.operationalState}</small></li>${commandPanel}<li>Leituras válidas <small>${store.state.loaded}</small></li><li>Carregamento #${store.state.loadingId || "—"} <small>Sincronizado no banco local</small></li></ul>${summaryAction ? `<div class="actions work-summary-action">${summaryAction}</div>` : ""}</aside></div>`}`;
+  return `${pageHeader(`Operação / ${equipmentLabel(store)}`, "Tela de Trabalho", `Romaneio #${store.state.romaneio} para o caminhão ${store.state.truck}.`, badge)}${loadingPicker}${statuses(store)}${avisoClp}${manualIdentification}${store.state.emergency ? emergencyPanel : `<div class="grid two"><section class="panel"><span class="kicker">Produto atual</span><h3>Produto do romaneio</h3><p>Leituras vinculadas ao carregamento atual</p><div class="grid three"><div class="metric"><small>Programado</small><strong data-live="planned">${numero(store.state.planned)}</strong></div><div class="metric"><small>Carregado</small><strong data-live="loaded">${numero(store.state.loaded)}</strong></div><div class="metric"><small>Faltam</small><strong data-live="remaining">${numero(left)}</strong></div></div>${progress(store)}${left <= 5 && left > 0 ? '<div class="alert-box">Faltam 5 sacas ou menos. Reduza o envio.</div>' : ""}<div class="actions">${controls}</div></section><aside class="panel"><h3>Estado persistido</h3><ul><li>Estado atual <small data-live="operational-state">${esc(rotuloEstado(store.state.operationalState))}</small></li>${commandPanel}<li>Leituras válidas <small data-live="loaded-secondary">${numero(store.state.loaded)}</small></li><li>Carregamento #${store.state.loadingId || "—"} <small>Sincronizado no banco local</small></li></ul>${summaryAction ? `<div class="actions work-summary-action">${summaryAction}</div>` : ""}</aside></div>`}`;
 }
 export function work(store) {
   if (

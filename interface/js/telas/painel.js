@@ -1,26 +1,15 @@
 import { button, esc } from "../funcoes/html.js";
-import { deviceBadge, pageHeader } from "../funcoes/view.js";
-
-const loadingLabels = {
-  AGUARDANDO: "Aguardando",
-  PREPARANDO: "Preparando",
-  CARREGANDO: "Ligada",
-  PAUSADO: "Desligada",
-  FINALIZANDO: "Finalizando",
-  FINALIZADO: "Finalizado",
-  EMERGENCIA: "Emergência",
-  ERRO: "Erro",
-};
+import { numero, relativo } from "../funcoes/formato.js";
+import { rotuloEstado } from "../funcoes/rotulos.js";
+import { deviceBadge, pageHeader } from "../funcoes/view.js?v=202609150020";
 
 function dalaAlbumCard(equipment, machines, role) {
   const machine =
     machines.find((item) => Number(item.id) === Number(equipment.id)) || {};
   const status = machine.clp_status || "DESCONHECIDO";
-  const lastSignal = machine.last_seen_at || "Sem sinal registrado";
+  const lastSignal = relativo(machine.last_seen_at);
   const loadingId = machine.carregamento_id || "";
-  const state = String(
-    machine.carregamento_state || "AGUARDANDO",
-  ).toUpperCase();
+  const state = String(machine.carregamento_state || "AGUARDANDO").toUpperCase();
   const planned = Number(machine.planned_quantity || 0);
   const loaded = Number(machine.valid_readings || 0);
   const percentage =
@@ -37,8 +26,8 @@ function dalaAlbumCard(equipment, machines, role) {
     <div class="dala-album-info dala-romaneio-info">
       <div><small>Romaneio</small><strong>${machine.romaneio_number ? `#${esc(machine.romaneio_number)}` : "Sem romaneio"}</strong></div>
       <div><small>Caminhão</small><strong>${esc(machine.plate || "—")}</strong></div>
-      <div><small>Estado</small><strong>${esc(loadingLabels[state] || state)}</strong></div>
-      <div><small>Carregado</small><strong>${loaded.toLocaleString("pt-BR")} / ${planned.toLocaleString("pt-BR")}</strong></div>
+      <div><small>Estado</small><strong>${esc(rotuloEstado(state))}</strong></div>
+      <div><small>Carregado</small><strong>${numero(loaded)} / ${numero(planned)}</strong></div>
     </div>
     <div class="album-progress"><div class="progress"><i style="width:${percentage}%"></i></div><small>${percentage}% do romaneio</small></div>
     <footer>

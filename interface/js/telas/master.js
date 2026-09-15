@@ -1,5 +1,5 @@
 import { esc } from "../funcoes/html.js";
-import { companyGrid, pageHeader } from "../funcoes/view.js";
+import { companyGrid, pageHeader } from "../funcoes/view.js?v=202609150020";
 
 function formatDate(value) {
   return value ? String(value).replace(" ", " • ").split(".")[0] : "—";
