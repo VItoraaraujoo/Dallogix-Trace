@@ -111,6 +111,24 @@
     }
 }
 
+/* No celular, sobrescreve as larguras percentuais das colunas desktop para
+   que cada célula ocupe toda a largura do cartão responsivo. */
+@media (max-width: 760px) {
+    .dalas-reference-table,
+    .dalas-reference-table tbody,
+    .dalas-reference-table tr,
+    .dalas-reference-table td {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .dalas-reference-table td {
+        grid-template-columns: minmax(112px, 38%) minmax(0, 1fr);
+        padding: 10px 0;
+    }
+}
+
 @media (min-width: 761px) and (max-width: 1200px) {
     .shell.sidebar-collapsed .dalas-reference-table-wrap {
         width: calc(100% + 72px);
