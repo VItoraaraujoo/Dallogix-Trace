@@ -4,7 +4,7 @@ import { el, esc } from "./funcoes/html.js";
 import { numero } from "./funcoes/formato.js";
 import { rotuloEstado } from "./funcoes/rotulos.js";
 import { settings } from "./telas/configuracoes.js?v=202609140210";
-import { dalaActions, dalaEdit, dalas, dalaView } from "./telas/dalas.js?v=202609150100";
+import { dalaActions, dalaEdit, dalas, dalaView } from "./telas/dalas.js?v=202609150130";
 import { company } from "./telas/empresa.js";
 import { companies } from "./telas/empresas.js";
 import { errorLogs } from "./telas/logs.js";
@@ -16,7 +16,7 @@ import {
     occurrences,
     products,
     summary,
-} from "./telas/monitoramento.js";
+} from "./telas/monitoramento.js?v=202609150130";
 import {
     division,
     importScreen,
@@ -24,8 +24,8 @@ import {
     manifests,
     manifestView,
     work,
-} from "./telas/operacoes.js?v=202609150100";
-import { dashboard } from "./telas/painel.js";
+} from "./telas/operacoes.js?v=202609150130";
+import { dashboard } from "./telas/painel.js?v=202609150130";
 import { users } from "./telas/usuarios.js";
 import { atualizarStatusDasDalas, linhaItemRomaneio } from "./controladores/operacao.js";
 
@@ -384,10 +384,6 @@ function hydrateChrome() {
 function render() {
   hydrateChrome();
   el("#screen-root").innerHTML = screens[currentPage](store);
-  // Os campos devem iniciar vazios; orientações ficam nos rótulos e textos da tela.
-  document
-    .querySelectorAll("#screen-root input[placeholder], #screen-root textarea[placeholder]")
-    .forEach((field) => field.removeAttribute("placeholder"));
   bindActions();
   bindForms();
   if (["dalas", "dala"].includes(currentPage)) atualizarStatusDasDalas(store);
@@ -1531,6 +1527,12 @@ function bindForms() {
   if (pdfForm) {
     const pdfFile = pdfForm.querySelector(".file-input");
     const pdfFileName = pdfForm.querySelector("[data-file-name]");
+    const pdfFeedback = document.querySelector("#pdf-import-feedback");
+    const showPdfFeedback = (message, tone = "") => {
+      if (!pdfFeedback) return;
+      pdfFeedback.className = `import-feedback${tone ? ` is-${tone}` : ""}`;
+      pdfFeedback.textContent = message;
+    };
     pdfFile?.addEventListener("change", () => {
       pdfFileName.textContent = pdfFile.files?.[0]?.name || "Nenhum arquivo escolhido";
     });
@@ -1538,6 +1540,7 @@ function bindForms() {
       event.preventDefault();
       const buttonNode = pdfForm.querySelector("button.button");
       if (buttonNode) buttonNode.disabled = true;
+      showPdfFeedback("Lendo o PDF…");
       try {
         const data = await store.importPdf(new FormData(pdfForm));
         const fields = data.fields || {};
@@ -1563,11 +1566,12 @@ function bindForms() {
           }
         }
         const missing = data.missing || [];
-        alert(
+        showPdfFeedback(
           `PDF importado.${missing.length ? ` Campos não encontrados: ${missing.join(", ")}.` : " Confira os dados e salve."}`,
+          missing.length ? "warning" : "success",
         );
       } catch (error) {
-        alert(error.message);
+        showPdfFeedback(error.message || "Não foi possível importar o PDF.", "error");
       } finally {
         if (buttonNode) buttonNode.disabled = false;
       }
@@ -1577,26 +1581,38 @@ function bindForms() {
   if (csvForm) {
     const csvFile = csvForm.querySelector(".file-input");
     const csvFileName = csvForm.querySelector("[data-file-name]");
+    const csvFeedback = document.querySelector("#csv-import-feedback");
+    const showCsvFeedback = (message, tone = "") => {
+      if (!csvFeedback) return;
+      csvFeedback.className = `import-feedback${tone ? ` is-${tone}` : ""}`;
+      csvFeedback.textContent = message;
+    };
     csvFile?.addEventListener("change", () => {
       csvFileName.textContent = csvFile.files?.[0]?.name || "Nenhum arquivo escolhido";
     });
     csvForm.addEventListener("submit", async (event) => {
       event.preventDefault();
-      const response = await fetch("/api/importar_csv.php", {
-        method: "POST",
-        headers: store.csrfToken ? { "X-CSRF-Token": store.csrfToken } : {},
-        body: new FormData(csvForm),
-      });
-      const result = await response.json();
-      if (!response.ok) {
-        alert(result.error || "Falha ao importar CSV.");
-        return;
+      const submit = csvForm.querySelector("button.button");
+      if (submit) submit.disabled = true;
+      showCsvFeedback("Validando o CSV…");
+      try {
+        const response = await fetch("/api/importar_csv.php", {
+          method: "POST",
+          headers: store.csrfToken ? { "X-CSRF-Token": store.csrfToken } : {},
+          body: new FormData(csvForm),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Falha ao importar CSV.");
+        await store.loadManifests();
+        showCsvFeedback(
+          `${result.data.romaneios} romaneio(s), ${result.data.items} item(ns) consolidados em ${result.data.linhas} linha(s) importada(s).`,
+          "success",
+        );
+      } catch (error) {
+        showCsvFeedback(error.message || "Falha ao importar CSV.", "error");
+      } finally {
+        if (submit) submit.disabled = false;
       }
-      await store.loadManifests();
-      alert(
-        `${result.data.romaneios} romaneio(s), ${result.data.items} item(ns) consolidados em ${result.data.linhas} linha(s) importada(s).`,
-      );
-      navigate("manifests");
     });
   }
   const prepareLoadingForm = document.querySelector("#prepare-loading-form");

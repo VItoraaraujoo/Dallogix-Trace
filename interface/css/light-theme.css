@@ -4368,6 +4368,33 @@ p {
   min-width: 190px;
 }
 
+.dala-color-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 6px;
+  vertical-align: -1px;
+  border: 1px solid rgba(23, 33, 43, 0.2);
+  border-radius: 50%;
+  background: #8b949e;
+}
+
+.dala-color-swatch[data-color="VERDE"] { background: #23834f; }
+.dala-color-swatch[data-color="VERMELHO"] { background: #b83242; }
+.dala-color-swatch[data-color="AMBAR"] { background: #d79a00; }
+.dala-color-swatch[data-color="AZUL"] { background: #176fa5; }
+
+.import-feedback {
+  min-height: 22px;
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.import-feedback.is-success { color: var(--green); }
+.import-feedback.is-warning { color: #8a6100; }
+.import-feedback.is-error { color: var(--red); }
+
 .manifest-row-actions > .button {
   white-space: nowrap;
 }

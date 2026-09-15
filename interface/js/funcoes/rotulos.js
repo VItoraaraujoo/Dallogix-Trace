@@ -38,6 +38,16 @@ const STATUS_SINCRONIZACAO = {
   ERRO: "Com erro",
 };
 
+const OCORRENCIAS = {
+  SACA_RASGADA: "Saca rasgada",
+  SACA_AVARIADA: "Saca avariada",
+  PARADA_MAQUINA: "Parada de máquina",
+  LIMPEZA_LINHA: "Limpeza de linha",
+  QUEDA_ENERGIA: "Queda de energia",
+  AJUSTE_EQUIPAMENTO: "Ajuste de equipamento",
+  FALHA_ELETRICA: "Falha elétrica",
+};
+
 function labelFrom(map, value, fallback = "—") {
   const normalized = String(value || "").trim().toUpperCase();
   return map[normalized] || (normalized ? normalized.replaceAll("_", " ") : fallback);
@@ -71,4 +81,8 @@ export function rotuloStatusRomaneio(value) {
     FINALIZADO: "Finalizado",
     CANCELADO: "Cancelado",
   }, value);
+}
+
+export function rotuloOcorrencia(value) {
+  return labelFrom(OCORRENCIAS, value);
 }

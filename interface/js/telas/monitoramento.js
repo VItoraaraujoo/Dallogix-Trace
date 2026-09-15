@@ -1,8 +1,10 @@
 import { button, esc } from "../funcoes/html.js";
-import { pageHeader, manifestsTable, progress } from "../funcoes/view.js?v=202609150020";
+import { dataHora, numero } from "../funcoes/formato.js";
+import { pageHeader, manifestsTable, progress } from "../funcoes/view.js?v=202609150130";
+import { rotuloOcorrencia } from "../funcoes/rotulos.js";
 export function occurrences(store) {
   const recent = store.state.monitoring?.ocorrencias || [];
-  return `${pageHeader("Acompanhamento / qualidade", "Ocorrências", "Registre desvios e paradas relacionadas à carga atual.")}<div class="grid two"><section class="panel"><h3>Ocorrência do lote</h3><form id="occurrence-form"><label>Tipo<select name="type"><option>Saca rasgada</option><option>Saca avariada</option><option>Parada de máquina</option><option>Limpeza de linha</option><option>Queda de energia</option><option>Ajuste de equipamento</option><option>Falha elétrica</option></select></label><label>Quantidade<input name="quantity" type="number" min="1" value="1" /></label><label>Observação<textarea name="description" placeholder="Descreva o que aconteceu..."></textarea></label>${button("Salvar ocorrência", "save-occurrence")}</form></section><section class="panel"><h3>Registros recentes</h3><ul>${recent.length ? recent.map((item) => `<li>${esc(item.type)} — ${Number(item.quantity) || 0} unidade(s)<small>${esc(item.description || "Sem observação")}</small></li>`).join("") : "<li>Nenhuma ocorrência registrada.</li>"}</ul></section></div>`;
+  return `${pageHeader("Acompanhamento / qualidade", "Ocorrências", "Registre desvios e paradas relacionadas à carga atual.")}<div class="grid two"><section class="panel"><h3>Ocorrência do lote</h3><form id="occurrence-form"><label>Tipo<select name="type"><option value="SACA_RASGADA">Saca rasgada</option><option value="SACA_AVARIADA">Saca avariada</option><option value="PARADA_MAQUINA">Parada de máquina</option><option value="LIMPEZA_LINHA">Limpeza de linha</option><option value="QUEDA_ENERGIA">Queda de energia</option><option value="AJUSTE_EQUIPAMENTO">Ajuste de equipamento</option><option value="FALHA_ELETRICA">Falha elétrica</option></select></label><label>Quantidade<input name="quantity" type="number" min="1" max="9999" step="1" value="1" /></label><label>Observação<textarea name="description" placeholder="Descreva o que aconteceu..."></textarea></label>${button("Salvar ocorrência", "save-occurrence")}</form></section><section class="panel"><h3>Registros recentes</h3><ul>${recent.length ? recent.map((item) => `<li>${esc(rotuloOcorrencia(item.type))} — ${numero(item.quantity)} unidade(s)<small>${esc(dataHora(item.created_at))} · ${esc(item.description || "Sem observação")}</small></li>`).join("") : "<li>Nenhuma ocorrência registrada.</li>"}</ul></section></div>`;
 }
 export function summary(store) {
   const data = store.state.monitoring || {
@@ -70,10 +72,10 @@ const products = search
   const form = open
     ? `<section class="panel"><div class="panel-heading"><h3>${editing ? "Editar produto" : "Cadastrar produto"}</h3></div>
 <form id="product-form" data-editing="${editing ? editing.id : ""}"><div class="grid four">
-<label>Nome <b class="required">*</b><input name="name" required value="${editing ? esc(editing.name) : ""}" placeholder="Nome do produto" /></label>
-<label>Código de Barras <b class="required">*</b><input name="barcode" required value="${editing ? esc((editing.barcodes || "").split(",")[0]) : ""}" placeholder="7898250782592" /></label>
-<label>SKU<input name="code" value="${editing ? esc(editing.code || "") : ""}" placeholder="Opcional — gerado automaticamente" /></label>
-<label>Categoria<input name="category" value="${editing ? esc(editing.category || "") : ""}" placeholder="Opcional" /></label>
+<label>Nome <b class="required">*</b><input name="name" required value="${editing ? esc(editing.name) : ""}" /><small>Nome comercial do produto.</small></label>
+<label>Código de Barras <b class="required">*</b><input name="barcode" required value="${editing ? esc((editing.barcodes || "").split(",")[0]) : ""}" /><small>Exemplo: 7898250782592.</small></label>
+<label>SKU<input name="code" value="${editing ? esc(editing.code || "") : ""}" /><small>Opcional; gerado automaticamente se ficar vazio.</small></label>
+<label>Categoria<input name="category" value="${editing ? esc(editing.category || "") : ""}" /><small>Opcional.</small></label>
 </div><div class="actions">${button("Salvar", "submit-product", editing ? "secondary" : "primary")}${button("Cancelar", "cancel-product", "ghost")}</div></form></section><br>`
     : "";
   return `<div class="title-row with-actions"><div><h2>Produtos</h2></div>${button(open ? "Fechar formulário" : "+ Novo produto", "toggle-product-form")}</div>
