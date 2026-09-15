@@ -175,6 +175,15 @@ final class ServicoGatewayClp
 
             $stateChanged = false;
             if ($status === "APLICADO" && $request["command"] === "DESBLOQUEAR_MAQUINA") {
+                // Serializa ACK e novas emergências pelo mesmo registro de
+                // carregamento antes de decidir qual solicitação é a atual.
+                $loadingLock = $this->connection->prepare(
+                    "SELECT state FROM carregamentos WHERE id = :id AND company_id = :company_id LIMIT 1 FOR UPDATE",
+                );
+                $loadingLock->execute([
+                    "id" => $request["carregamento_id"],
+                    "company_id" => $request["company_id"],
+                ]);
                 $latest = $this->connection->prepare(
                     "SELECT id FROM solicitacoes_comandos_clp
                      WHERE carregamento_id = :carregamento_id AND command = 'DESBLOQUEAR_MAQUINA'
