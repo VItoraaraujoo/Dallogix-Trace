@@ -8,16 +8,18 @@ HTML, CSS, JavaScript, PHP, MySQL, Node-RED, Nginx, Docker e Docker Compose.
 
 ## Estado atual
 
-Operação local-first integrada. Cada tela possui seu próprio HTML (`interface/*.html`) com núcleo compartilhado em `js/aplicacao.js`; login em `index.html`. O ambiente base, operação persistida, auditoria, fila de sincronização, monitoramento, ocorrências, catálogo, importação transacional, preparação e encerramento de carregamentos, captura seletiva de evidências, retenção automática de imagens, relatório CSV e controles por perfil estão disponíveis.
+Operação local-first integrada. Cada tela possui seu próprio HTML (`interface/*.html`) com núcleo compartilhado em `js/aplicacao.js`; login em `index.html`. O ambiente base, operação persistida, auditoria, fila de sincronização, monitoramento, ocorrências, catálogo, importação transacional, preparação e encerramento de carregamentos, captura seletiva de evidências, retenção automática de imagens e dados operacionais, relatório CSV e controles por perfil estão disponíveis.
 
 A reversão e as ações configuráveis por Dala usam uma fila própria para o gateway industrial: o painel só registra a solicitação; o gateway autenticado confirma ou rejeita o comando após validar o CLP. Gatilhos, como atingir 100% da quantidade planejada, seguem a mesma fila. Nenhuma escrita física é feita pelo servidor. A ligação real ainda depende do mapa de I/O homologado, do programa Ladder e dos testes de bancada.
 
 ## Credenciais locais
 
-- `admin@dallogix.local` / `password` — administrador da empresa (operação local).
-- `supervisor@dallogix.local` / `password1234` — supervisor local (teste).
-- `operador@dallogix.local` / `password1234` — operador local (teste).
-- `master@dallogix.local` / `password` — administrador Dallogix (menu "Empresas" com todas as empresas e dashboards gerenciais).
+O seed cria usuários de demonstração com troca obrigatória de senha no primeiro login. As senhas abaixo existem somente para inicializar um ambiente local e não são aceitas como configuração de produção:
+
+- `admin@dallogix.local` / `password` — administrador da empresa.
+- `supervisor@dallogix.local` / `password1234` — supervisor local.
+- `operador@dallogix.local` / `password1234` — operador local.
+- `master@dallogix.local` / `password` — administrador Dallogix.
 
 ## Executar
 
@@ -37,26 +39,30 @@ os testes e os limites em [teste de produção local](documentacao/operacao/test
 
 ## Banco local
 
-Com os containers ativos, aplique as migrations e o seed:
+Com os containers ativos, aplique as migrations controladas e o seed:
 
 ```bash
-for migration in banco-de-dados/migrations/*.sql; do
-  docker compose exec -T mysql mysql -u root -pchange-me-root trace_local < "$migration"
-done
+./scripts/migrate.sh
 docker compose exec -T mysql mysql -u root -pchange-me-root trace_local < banco-de-dados/seeds/001_local_seed.sql
 ```
 
-Em uma instalação já existente, aplique somente as migrations ainda não executadas. A mais recente é `023_codigo_barras_por_empresa.sql`.
+Em uma instalação já existente, `scripts/migrate.sh` cria o controle de versão e registra o schema legado sem reaplicar migrations históricas. A mais recente é `026_auditoria_sync_lote.sql`, que correlaciona cada auditoria nova com seu evento de sincronização e registra a confirmação de entrega; a migration anterior torna a fila independente da auditoria e preserva filas históricas sem empresa em `fila_sincronizacao_orfas`.
 
 O seed cria uma empresa, usuário administrador, máquina, esteira, produto e barcode para desenvolvimento local.
+
+As credenciais técnicas locais do seed são `TRACE_DEVICE_TOKEN=trace-device-local-token-2026-v1` para o CLP e `CAMERA_DEVICE_TOKEN=trace-camera-local-token-2026-v1` para a câmera. Em uma instalação real, gere tokens próprios e provisione cada dispositivo com `php scripts/provision_device.php`.
 
 ## Acesso remoto e servidor central
 
 Não existe uma tela remota no PC industrial. Todo gerenciamento fora da máquina deve ser feito pelo servidor central. O PC industrial inicia as conexões de saída HTTPS para heartbeat e sincronização; não há port forwarding. A operação PC industrial ↔ CLP e o banco/fila local continuam disponíveis durante quedas de internet.
 
+O serviço `sync-worker` reserva eventos em lotes, envia com timeout e backoff e recupera reservas abandonadas. Quando `SYNC_REMOTE_BATCH_URL` é configurada, o worker usa o contrato HTTP de lote; sem ela, mantém compatibilidade com o endpoint individual `SYNC_REMOTE_URL`. O serviço `image-retention` executa diariamente a limpeza de imagens e a retenção segura de leituras, eventos de sensor, auditoria confirmada, fila enviada e logs de erro. Os prazos podem ser ajustados no `.env`; registros de auditoria só são removidos quando existe entrega confirmada e nenhuma tentativa pendente.
+
+`/api/health.php` informa versão, profundidade/idade da fila, heartbeats, comandos travados e espaço livre. Fila pendente sem erro pode ser normal quando a sincronização remota está desabilitada; o healthcheck degrada quando há erro, atraso acima do limite ou risco operacional.
+
 O deploy automático do servidor de teste ocorre pelo workflow [`.github/workflows/deploy-test.yml`](.github/workflows/deploy-test.yml) depois que os checks de qualidade e segurança aprovam o mesmo commit da `master`, usando SSH e healthcheck. Os segredos de acesso ficam somente no ambiente protegido `test` do GitHub. A publicação de produção ocorre somente por tags de versão no workflow [`.github/workflows/release-production.yml`](.github/workflows/release-production.yml).
 
-Credencial local: `admin@dallogix.local` / `password`.
+Credencial local inicial: `admin@dallogix.local` / `password`; no primeiro acesso a troca de senha é obrigatória.
 
 ## Parar e reiniciar
 
@@ -105,6 +111,8 @@ Para PC industrial Windows, use o launcher e as orientações em [implantacao/wi
 O instalador visual para a equipe técnica é definido em [implantacao/windows/TraceSetup.iss](implantacao/windows/TraceSetup.iss) e gera `TraceSetup.exe` quando compilado no Inno Setup em uma máquina Windows. Credenciais e configurações específicas nunca entram no pacote.
 
 Atualizações remotas seguras, com manifesto assinado, bloqueio durante operação, backup e rollback, estão descritas em [documentacao/operacao/atualizacoes-remotas.md](documentacao/operacao/atualizacoes-remotas.md).
+
+O timer systemd de atualização automática fica desabilitado por padrão. Só deve ser habilitado após criar conscientemente `/etc/dallogix-trace/enable-auto-update` e configurar manifesto, chave pública e janela de manutenção. O caminho legado `scripts/sync_github_archive.sh` agora apenas encaminha para `scripts/update_trace.sh`.
 
 Antes de uma implantação física, carregue o `.env` no ambiente e execute `bash scripts/check_production_env.sh` para validar os requisitos mínimos sem revelar segredos.
 

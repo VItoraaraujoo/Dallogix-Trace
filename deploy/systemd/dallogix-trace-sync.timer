@@ -1,11 +1,10 @@
 [Unit]
-Description=Verifica atualizações da master do Dallogix Trace
+Description=Verifica releases assinadas do Dallogix Trace (desativado por padrão)
+ConditionPathExists=/etc/dallogix-trace/enable-auto-update
 
 [Timer]
-OnBootSec=2min
-OnUnitInactiveSec=1min
-Persistent=true
+OnBootSec=10min
+OnUnitInactiveSec=1d
+RandomizedDelaySec=30min
+Persistent=false
 Unit=dallogix-trace-sync.service
-
-[Install]
-WantedBy=timers.target

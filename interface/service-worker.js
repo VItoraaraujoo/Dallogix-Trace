@@ -1,4 +1,4 @@
-const CACHE_NAME = "trace-shell-20260916-3";
+const CACHE_NAME = "trace-shell-20260916-4";
 const SHELL = [
   "/",
   "/index.html",
@@ -23,7 +23,7 @@ const SHELL = [
   "/css/styles.css",
   "/css/light-theme.css",
   "/css/auth.css",
-  "/css/dalas-layout-fix.css",
+  "/css/responsive.css",
   "/js/aplicacao.js",
 ];
 
@@ -81,7 +81,7 @@ self.addEventListener("fetch", (event) => {
 
   if (/\.(?:css|js)$/.test(url.pathname)) {
     event.respondWith(
-      fetch(request)
+      fetch(new Request(request, { cache: "no-store" }))
         .then((response) => cacheResponse(request, response))
         .catch(async () => (await caches.match(request)) || Response.error()),
     );

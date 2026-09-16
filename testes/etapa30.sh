@@ -3,7 +3,7 @@ set -u
 
 base_url="${TRACE_BASE_URL:-http://localhost:8080}"
 equipment_id="${TRACE_TEST_EQUIPMENT_ID:-$(docker compose exec -T mysql mysql -N -utrace -pchange-me-local trace_local -e "SELECT e.id FROM equipamentos e WHERE NOT EXISTS (SELECT 1 FROM carregamentos c WHERE c.equipment_id = e.id AND c.state <> 'FINALIZADO') ORDER BY e.id LIMIT 1" 2>/dev/null | tr -d '\r' | head -n 1)}"
-gateway_token="${PLC_INTERNAL_TOKEN:-change-me-plc-token}"
+gateway_token="${TRACE_DEVICE_TOKEN:-trace-device-local-token-2026-v1}"
 cookie_file="/tmp/dallogix-trace-etapa30-cookie.txt"
 number="PREP-$(date +%s)"
 plate="PRP$(date +%s | tail -c 7)"
@@ -21,7 +21,7 @@ prepared="$(curl -sS -b "$cookie_file" -H 'Content-Type: application/json' -d "{
 loading_id="$(printf '%s' "$prepared" | sed -n 's/.*"id":\([0-9][0-9]*\).*/\1/p')"
 printf '%s' "$prepared" | grep -q '"state":"PREPARANDO"' || fail "preparação falhou: $prepared"
 
-curl -sS -H 'Content-Type: application/json' -H "X-Internal-Token: $gateway_token" -d "{\"equipment_id\":$equipment_id,\"device_type\":\"CLP\",\"status\":\"ONLINE\"}" "$base_url/api/device_heartbeat.php" >/dev/null
+curl -sS -H 'Content-Type: application/json' -H "X-Device-Token: $gateway_token" -d "{\"equipment_id\":$equipment_id,\"device_type\":\"CLP\",\"status\":\"ONLINE\"}" "$base_url/api/device_heartbeat.php" >/dev/null
 
 duplicate_code="$(curl -sS -o /dev/null -w '%{http_code}' -b "$cookie_file" -H 'Content-Type: application/json' -d "{\"romaneio_id\":$manifest_id,\"truck_id\":$truck_id,\"equipment_id\":$equipment_id}" "$base_url/api/carregamentos.php")"
 [ "$duplicate_code" = "409" ] || fail "duplicidade de Dala/caminhão foi aceita"

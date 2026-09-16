@@ -24,7 +24,7 @@ import {
     manifests,
     manifestView,
     work,
-} from "./telas/operacoes.js?v=202609160001";
+} from "./telas/operacoes.js?v=202609150500";
 import { dashboard } from "./telas/painel.js?v=202609150300";
 import { users } from "./telas/usuarios.js";
 import { atualizarStatusDasDalas, linhaItemRomaneio } from "./controladores/operacao.js";
@@ -321,7 +321,7 @@ function installLocalIndicator() {
 
 function installOfflineShell() {
   if (!("serviceWorker" in navigator) || window.location.protocol === "file:") return;
-  navigator.serviceWorker.register("/service-worker.js?v=202609160003").catch(() => {
+  navigator.serviceWorker.register("/service-worker.js?v=202609160004").catch(() => {
     // A aplicação continua funcional quando o navegador não oferece suporte ao cache offline.
   });
 }
@@ -577,8 +577,8 @@ function timedCommandConfirmation({
 function bindActions() {
   if (!document.body.dataset.shellInteractionsBound) {
     document.body.dataset.shellInteractionsBound = "1";
-    document.addEventListener("keydown", (event) => {
-      if (event.key !== "Escape") return;
+      document.addEventListener("keydown", (event) => {
+        if (event.key !== "Escape") return;
       document.querySelectorAll(".dala-menu-list-v2").forEach((item) => {
         item.hidden = true;
       });
@@ -590,10 +590,20 @@ function bindActions() {
       if (!shell?.classList.contains("mobile-menu-open")) return;
       shell.classList.remove("mobile-menu-open");
       document.body.classList.remove("mobile-menu-open");
-      toggle?.setAttribute("aria-expanded", "false");
-      toggle?.setAttribute("title", "Abrir menu");
-    });
-  }
+        toggle?.setAttribute("aria-expanded", "false");
+        toggle?.setAttribute("title", "Abrir menu");
+      });
+      document.addEventListener("click", (event) => {
+        const shell = document.querySelector(".shell");
+        if (!shell?.classList.contains("mobile-menu-open")) return;
+        if (event.target.closest(".sidebar, [data-action=\"toggle-menu\"]")) return;
+        shell.classList.remove("mobile-menu-open");
+        document.body.classList.remove("mobile-menu-open");
+        const toggle = document.querySelector('[data-action="toggle-menu"]');
+        toggle?.setAttribute("aria-expanded", "false");
+        toggle?.setAttribute("title", "Abrir menu");
+      });
+    }
   document.querySelectorAll("[data-action]").forEach((node) => {
     if (node.dataset.actionBound === "1") return;
     node.dataset.actionBound = "1";
@@ -654,6 +664,22 @@ function bindActions() {
         });
         list.hidden = !willOpen;
         node.setAttribute("aria-expanded", String(willOpen));
+        return;
+      }
+      if (action === "toggle-manifest-filters") {
+        const panel = document.querySelector("#manifest-filters-panel");
+        if (!panel) return;
+        const willOpen = panel.hidden;
+        panel.hidden = !willOpen;
+        node.setAttribute("aria-expanded", String(willOpen));
+        return;
+      }
+      if (action === "clear-manifest-date") {
+        const form = document.querySelector("#manifest-filters");
+        const field = form?.elements?.namedItem(node.dataset.field || "");
+        if (!field) return;
+        field.value = "";
+        field.dispatchEvent(new Event("change", { bubbles: true }));
         return;
       }
       if (action === "open-company") {

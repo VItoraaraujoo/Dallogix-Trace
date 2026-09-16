@@ -5,7 +5,7 @@
   "equipment_code": "EST-001",
   "trace_url": "http://127.0.0.1:8080",
   "central_api_url": "https://api.seudominio.com.br",
-  "central_token": "PREENCHER_FORA_DO_REPOSITORIO",
+  "device_token": "PREENCHER_FORA_DO_REPOSITORIO",
   "heartbeat_seconds": 15,
   "operation_mode": "SIMULATED",
   "physical_clp_enabled": false,

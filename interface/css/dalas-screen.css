@@ -279,4 +279,16 @@
     gap: 10px;
     padding-inline: 12px;
   }
+
+  .dala-grid-cell-v2,
+  .dala-grid-cell-v2 code,
+  .dala-grid-cell-v2 strong {
+    overflow-wrap: break-word;
+    word-break: normal;
+  }
+
+  .dala-grid-cell-v2 code {
+    font-size: 13px;
+    line-height: 1.35;
+  }
 }

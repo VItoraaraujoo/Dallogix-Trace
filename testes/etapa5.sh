@@ -2,7 +2,7 @@
 set -u
 
 base_url="${TRACE_BASE_URL:-http://localhost:8080}"
-gateway_token="${PLC_INTERNAL_TOKEN:-change-me-plc-token}"
+gateway_token="${TRACE_DEVICE_TOKEN:-trace-device-local-token-2026-v1}"
 cookie_file="/tmp/dallogix-trace-etapa5-cookie.txt"
 source "$(cd "$(dirname "$0")" && pwd)/lib/ensure_loading.sh"
 event_uuid="22222222-2222-4222-8222-$(printf '%012d' "$(date +%s)")"
@@ -20,7 +20,7 @@ fi
 loading_id="${TRACE_LOADING_ID:-$(ensure_loading_carregando)}"
 [ -n "$loading_id" ] || { echo "FAIL: nenhum carregamento CARREGANDO disponível"; exit 1; }
 
-curl -sS -H 'Content-Type: application/json' -H "X-Internal-Token: $gateway_token" -d '{"equipment_id":1,"device_type":"CLP","status":"ONLINE"}' "$base_url/api/device_heartbeat.php" >/dev/null
+curl -sS -H 'Content-Type: application/json' -H "X-Device-Token: $gateway_token" -d '{"equipment_id":1,"device_type":"CLP","status":"ONLINE"}' "$base_url/api/device_heartbeat.php" >/dev/null
 
 valid="$(curl -sS -b "$cookie_file" -H 'Content-Type: application/json' -d "{\"carregamento_id\":$loading_id,\"barcode\":\"7898250782592\"}" "$base_url/api/leituras.php")"
 if ! printf '%s' "$valid" | grep -q '"result":"VALIDO"'; then

@@ -45,7 +45,7 @@ UPDATE_PUBLIC_KEY_FILE=/opt/dallogix-trace/armazenamento/updates/trace-update-pu
 UPDATE_CHANNEL=stable
 ```
 
-Instale os serviços `dallogix-trace-update.service` e `dallogix-trace-update.timer` em `/etc/systemd/system/`, depois habilite o timer. O timer apenas consulta e instala seguindo as regras acima. Para testar sem alterar nada:
+Instale os serviços `dallogix-trace-sync.service` e `dallogix-trace-sync.timer` em `/etc/systemd/system/`. O timer permanece desabilitado por padrão; só habilite-o depois de criar `/etc/dallogix-trace/enable-auto-update`, configurar uma janela de manutenção e obter aprovação operacional. O timer apenas consulta e instala seguindo as regras acima. Para testar sem alterar nada:
 
 ```bash
 TRACE_UPDATE_DRY_RUN=1 bash scripts/update_trace.sh
@@ -73,6 +73,32 @@ git push origin v1.2.3
 ```
 
 O envio de um commit comum não atualiza a produção. A Dala só instala uma tag publicada, dentro da janela configurada no timer, depois de verificar assinatura, integridade, backup, ausência de carregamento ativo e healthcheck. O ambiente `production-release` deve exigir aprovação da equipe técnica antes de cada publicação.
+
+## Sincronização remota em lote
+
+O endpoint individual `SYNC_REMOTE_URL` continua sendo compatível com instalações
+existentes: cada requisição recebe um evento JSON. Para reduzir conexões em uma
+instalação com servidor central homologado, configure também `SYNC_REMOTE_BATCH_URL`.
+Nesse modo, o worker envia uma requisição `POST` com este envelope:
+
+```json
+{
+  "events": [
+    {
+      "event_uuid": "...",
+      "company_id": 7,
+      "aggregate_type": "leitura",
+      "aggregate_id": 42,
+      "payload": {"action": "LEITURA_REGISTRADA"}
+    }
+  ]
+}
+```
+
+O servidor central só deve responder `2xx` depois de aceitar o lote inteiro e
+deve tratar `event_uuid` como chave idempotente. Qualquer resposta fora de `2xx`
+faz todos os eventos do lote voltar para `ERRO` com backoff; não há confirmação
+parcial implícita. O token é enviado como `Authorization: Bearer` nos dois modos.
 
 ## Windows industrial
 

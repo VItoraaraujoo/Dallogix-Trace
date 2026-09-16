@@ -33,14 +33,43 @@ WHERE
       e.equipment_code = 'EST-001'
   );
 
+INSERT INTO dispositivos
+  (company_id, equipment_id, device_code, device_type, token_hash)
+SELECT
+  e.company_id,
+  e.id,
+  'PLC-EST-001',
+  'CLP',
+  '$2y$12$3tAPnZ8YIz3SZPV4KXntie3UKgIXqTiiD4pQKdxcuBYoGOolpyWTm'
+FROM equipamentos e
+WHERE e.equipment_code = 'EST-001'
+  AND NOT EXISTS (
+    SELECT 1 FROM dispositivos d WHERE d.device_code = 'PLC-EST-001'
+  );
+
+INSERT INTO dispositivos
+  (company_id, equipment_id, device_code, device_type, token_hash)
+SELECT
+  e.company_id,
+  e.id,
+  'CAM-EST-001',
+  'CAMERA',
+  '$2y$12$qXieqL6ctQPl3vwOjT9amuDed0qfKMDcmn1izzq/4p0QNyoBIm9.O'
+FROM equipamentos e
+WHERE e.equipment_code = 'EST-001'
+  AND NOT EXISTS (
+    SELECT 1 FROM dispositivos d WHERE d.device_code = 'CAM-EST-001'
+  );
+
 INSERT INTO
-  usuarios (company_id, name, email, password_hash, role)
+  usuarios (company_id, name, email, password_hash, role, must_change_password)
 SELECT
   c.id,
   'Administrador local',
   'admin@dallogix.local',
   '$2y$10$ebOT1MqNyajFths8pCaJu.qE7MOSNMWkXYLan9LVzGSXFHIdgxK8C',
-  'ADMIN_EMPRESA'
+  'ADMIN_EMPRESA',
+  1
 FROM
   empresas c
 WHERE
@@ -55,13 +84,14 @@ WHERE
   );
 
 INSERT INTO
-  usuarios (company_id, name, email, password_hash, role)
+  usuarios (company_id, name, email, password_hash, role, must_change_password)
 SELECT
   c.id,
   'Supervisor local',
   'supervisor@dallogix.local',
   '$2y$12$rNW5syuIUQXWmnkzFzzCUOq7APYSVr.0iN9JIkPvCvoT0mfa/Bwm.',
-  'SUPERVISOR'
+  'SUPERVISOR',
+  1
 FROM
   empresas c
 WHERE
@@ -71,13 +101,14 @@ WHERE
   );
 
 INSERT INTO
-  usuarios (company_id, name, email, password_hash, role)
+  usuarios (company_id, name, email, password_hash, role, must_change_password)
 SELECT
   c.id,
   'Operador local',
   'operador@dallogix.local',
   '$2y$12$rNW5syuIUQXWmnkzFzzCUOq7APYSVr.0iN9JIkPvCvoT0mfa/Bwm.',
-  'USUARIO'
+  'USUARIO',
+  1
 FROM
   empresas c
 WHERE
@@ -126,13 +157,14 @@ WHERE
   );
 
 INSERT INTO
-  usuarios (company_id, name, email, password_hash, role)
+  usuarios (company_id, name, email, password_hash, role, must_change_password)
 SELECT
   NULL,
   'Administrador Dallogix',
   'master@dallogix.local',
   '$2y$10$ebOT1MqNyajFths8pCaJu.qE7MOSNMWkXYLan9LVzGSXFHIdgxK8C',
-  'ADMIN_DALLOGIX'
+  'ADMIN_DALLOGIX',
+  1
 WHERE
   NOT EXISTS (
     SELECT

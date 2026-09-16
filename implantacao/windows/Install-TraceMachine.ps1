@@ -15,7 +15,7 @@ if (-not (Test-Path $MachineConfig)) { throw "machine.json deve ser criado pela 
 if (-not (Get-Command docker.exe -ErrorAction SilentlyContinue)) { throw "Docker Desktop não está instalado." }
 
 $config = Get-Content $MachineConfig -Raw | ConvertFrom-Json
-if (-not $config.machine_id -or -not $config.central_api_url -or -not $config.central_token) { throw "machine.json sem identidade ou servidor central." }
+if (-not $config.machine_id -or -not $config.central_api_url -or -not $config.device_token) { throw "machine.json sem identidade ou token do dispositivo SERVER." }
 if ($config.physical_clp_enabled -eq $true -and $config.io_map_status -ne "APPROVED") { throw "Instalação física bloqueada sem mapa de I/O aprovado." }
 
 $installRoot = "C:\ProgramData\DallogixTrace"

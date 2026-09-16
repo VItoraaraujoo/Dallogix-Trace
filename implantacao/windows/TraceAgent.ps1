@@ -11,7 +11,7 @@ function Write-AgentLog([string]$Message) {
 
 if (-not (Test-Path $ConfigPath)) { throw "Configuração da máquina não encontrada: $ConfigPath" }
 $config = Get-Content $ConfigPath -Raw | ConvertFrom-Json
-if (-not $config.machine_id -or -not $config.equipment_id -or -not $config.central_api_url -or -not $config.central_token) { throw "machine.json incompleto." }
+if (-not $config.machine_id -or -not $config.equipment_id -or -not $config.central_api_url -or -not $config.device_token) { throw "machine.json incompleto." }
 if ([string]$config.central_api_url -notmatch '^https://') { throw "central_api_url deve usar HTTPS." }
 if ($config.physical_clp_enabled -eq $true -and $config.io_map_status -ne "APPROVED") {
     throw "CLP físico bloqueado: o mapa de I/O não está aprovado."
@@ -41,7 +41,7 @@ while ($true) {
         }
     } | ConvertTo-Json -Depth 5
     try {
-        Invoke-RestMethod -Uri $heartbeatUrl -Method Post -Headers @{ "X-Internal-Token" = [string]$config.central_token } -ContentType "application/json" -Body $body -TimeoutSec 10 | Out-Null
+        Invoke-RestMethod -Uri $heartbeatUrl -Method Post -Headers @{ "X-Device-Token" = [string]$config.device_token } -ContentType "application/json" -Body $body -TimeoutSec 10 | Out-Null
     } catch {
         Write-AgentLog "Servidor central indisponível; operação local preservada: $($_.Exception.Message)"
     }

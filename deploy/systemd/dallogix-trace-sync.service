@@ -1,10 +1,11 @@
 [Unit]
-Description=Sincroniza a produção Dallogix Trace com a master
+Description=Atualiza o Dallogix Trace a partir de uma release assinada
 Wants=network-online.target
 After=network-online.target docker.service
+ConditionPathExists=/etc/dallogix-trace/enable-auto-update
 
 [Service]
 Type=oneshot
 WorkingDirectory=/opt/dallogix-trace
 Environment=PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-ExecStart=/usr/bin/bash /opt/dallogix-trace/scripts/sync_github_archive.sh
+ExecStart=/usr/bin/bash /opt/dallogix-trace/scripts/update_trace.sh

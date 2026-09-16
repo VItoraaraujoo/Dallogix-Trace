@@ -1,32 +1,30 @@
 .login-page {
-  min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   place-items: center;
   background: linear-gradient(135deg, #10222e, #1677a8);
-  padding: 24px;
-}
-
-@media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
-  .login-page {
-    min-height: 111.112vh;
-  }
-
-  .login-card {
-    zoom: 1.1;
-  }
+  padding: clamp(16px, 4vw, 40px);
 }
 .login-card {
-  width: min(100%, 420px);
+  width: min(100%, 440px);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
   background: #fff;
-  border-radius: 16px;
-  padding: 36px;
+  border-radius: clamp(12px, 2vw, 16px);
+  padding: clamp(22px, 4vw, 36px);
   box-shadow: 0 18px 55px #07151f66;
 }
 .login-brand {
-  margin: 0 0 42px;
+  margin: 0 0 clamp(24px, 5vw, 42px);
+}
+.login-brand img {
+  display: block;
+  width: min(100%, 360px);
+  height: auto;
+  margin: 0 auto;
 }
 .login-card h1 {
-  font-size: 30px;
+  font-size: clamp(26px, 7vw, 30px);
   margin: 8px 0;
 }
 .login-description {
@@ -55,6 +53,22 @@
 .login-button:disabled {
   opacity: 0.65;
   cursor: wait;
+}
+
+@media (max-width: 480px) {
+  .login-page {
+    align-items: start;
+    padding: 16px 12px;
+  }
+
+  .login-card {
+    max-height: none;
+    padding: 22px 18px;
+  }
+
+  .login-brand {
+    margin-bottom: 26px;
+  }
 }
 .login-hint {
   display: block;

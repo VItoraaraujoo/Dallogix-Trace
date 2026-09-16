@@ -41,6 +41,18 @@ O sistema permanece **local-first**: o banco local é a fonte de operação e a 
 - Local: `servidor/api/produtos.php`
 - Correção: bloco `catch` e resposta da rota `PUT` foram restaurados à estrutura correta.
 
+### OPS-03 — fila, retenção e healthcheck operacional
+
+- Severidade: alta para confiabilidade
+- Correção: `fila_sincronizacao` passou a guardar `company_id` obrigatório, com índice e chave estrangeira. Filas legadas sem vínculo inequívoco são preservadas em `fila_sincronizacao_orfas`.
+- Correção: `sync-worker` reserva lotes com `SKIP LOCKED`, aplica timeout e backoff, registra `ENVIADO`/`ERRO` e recupera reservas abandonadas. Com `SYNC_REMOTE_BATCH_URL`, o envelope inteiro é enviado em uma requisição; sem essa configuração, o endpoint individual continua compatível.
+- Correção: cada auditoria nova compartilha o `event_uuid` da outbox e recebe `delivered_at` na confirmação. A rotina diária mantém imagens e dados operacionais sem remover leituras ou eventos ainda referenciados; auditorias históricas sem vínculo exato ficam preservadas.
+- Correção: `/api/health.php` passou a expor fila, idade do evento mais antigo, heartbeats, comandos travados, disco e versão.
+
+### DEPLOY-01 — atualização remota fechada
+
+- Correção: o timer systemd fica inerte sem `/etc/dallogix-trace/enable-auto-update`. O caminho de execução usa `scripts/update_trace.sh`, que valida manifesto assinado, SHA-256, backup do banco e dos arquivos, janela sem carregamento ativo, migrations controladas, healthcheck, rollback completo e marca de falha.
+
 ## Controles verificados
 
 - Consultas SQL nas rotas revisadas usam `PDO::prepare()` com parâmetros.
@@ -53,7 +65,7 @@ O sistema permanece **local-first**: o banco local é a fonte de operação e a 
 ## Pendências para homologação comercial
 
 1. Trocar usuários e senhas de demonstração antes da instalação do cliente.
-2. Configurar HTTPS, segredos de banco e `CAMERA_INTERNAL_TOKEN` no ambiente de produção.
+2. Configurar HTTPS, segredos de banco e tokens exclusivos por dispositivo no ambiente de produção.
 3. Definir e homologar mapa Modbus e intertravamentos do Delta DVP14SS. O Trace só registra intenções de comando; o adaptador industrial e o CLP devem autorizar a ação física.
 4. Executar teste de carga com scanner Elgin EL8600 e câmera IP reais, inclusive offline/reconexão.
-5. Definir política de limpeza automática das imagens de incidente após 30 dias.
+5. Confirmar a política de retenção de imagens e dados operacionais no `.env`, mantendo exportação/congelamento quando a auditoria precisar ser preservada por prazo maior.

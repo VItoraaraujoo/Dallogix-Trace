@@ -30,7 +30,7 @@ Copy-Item .env.example .env
 notepad .env
 ```
 
-No `.env`, defina senhas aleatórias para `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD`, `CAMERA_INTERNAL_TOKEN` e `PLC_INTERNAL_TOKEN`. Nunca use valores `change-me-*`.
+No `.env`, defina senhas aleatórias para `MYSQL_PASSWORD` e `MYSQL_ROOT_PASSWORD`. Defina também `TRACE_DEVICE_TOKEN` e `CAMERA_DEVICE_TOKEN` com valores fortes e distintos; depois provisione cada dispositivo com `scripts/provision_device.php`. Nunca use valores `change-me-*`.
 
 Mantenha `WEB_BIND_ADDRESS=127.0.0.1` e `BIND_ADDRESS=127.0.0.1`. Assim a interface, MySQL e serviços técnicos não ficam expostos na rede industrial.
 
@@ -66,7 +66,7 @@ No navegador técnico, abra:
 http://127.0.0.1:8080/api/health.php
 ```
 
-O resultado deve ser `{"status":"ok","php":true,"mysql":true}`. Em seguida, abra `http://127.0.0.1:8080`, entre com um login autorizado e confirme cadastro de Dala, romaneio e logs.
+O resultado deve ser HTTP 200 com `php=true`, `mysql=true` e os blocos `checks.queue`, `checks.heartbeats`, `checks.commands` e `checks.disk`. `status=degraded` exige análise da fila, heartbeat, comando travado ou disco antes do go-live. Em seguida, abra `http://127.0.0.1:8080`, entre com um login autorizado e confirme cadastro de Dala, romaneio e logs.
 
 Para bancada, habilite o perfil `simulation` e execute o teste Modbus virtual. Não conecte comandos físicos nessa etapa.
 

@@ -14,11 +14,10 @@ Configure no ambiente do Node-RED:
 
 ```text
 TRACE_API_URL=http://trace-api.local
-O gateway descobre automaticamente todas as Dalas cadastradas pela API interna; não há limite fixo de equipamentos.
-PLC_INTERNAL_TOKEN=troque-este-token
+TRACE_DEVICE_TOKEN=token-do-dispositivo-CLP
 ```
 
-O endereço deve apontar para a API local da máquina, nunca para a URL pública de produção. Os valores `2049` e `2050` mostrados no fluxo de teste não são considerados mapa oficial de I/O.
+O token identifica um único gateway e a API só devolve a Dala vinculada a ele. O endereço deve apontar para a API local da máquina, nunca para a URL pública de produção. Provisione o token com `php scripts/provision_device.php`; não há fallback de token global para autenticar o gateway. Os valores `2049` e `2050` mostrados no fluxo de teste não são considerados mapa oficial de I/O.
 
 O nó `Modbus Read/Write` só deve ser acrescentado depois de confirmar em bancada a variante do Delta DVP14SS, IP, porta, unidade Modbus, registradores, bobinas e intertravamentos do Ladder. A ausência dessas informações é intencionalmente tratada como bloqueio seguro.
 
@@ -42,17 +41,22 @@ O scanner Elgin EL8600 ficará conectado ao PC industrial em USB ou RS-232 e per
 
 ## Heartbeat dos dispositivos
 
-O gateway deve publicar a cada **1 segundo** em `/api/device_heartbeat.php`, com `X-Internal-Token: ${PLC_INTERNAL_TOKEN}`: `{"equipment_id":N,"device_type":"CLP|SCANNER|SENSOR|CAMERA","status":"ONLINE","details":{"latency_ms":0}}`. Em falha, envie `OFFLINE` ou `ERRO` imediatamente. Se não houver sinal por mais de 3 segundos, a API bloqueia novos comandos operacionais. O fluxo deve tentar restabelecer a comunicação com o CLP a cada 2 segundos. Isso alimenta o monitoramento local; não habilita comandos físicos por si só.
+O gateway deve publicar a cada **1 segundo** em `/api/device_heartbeat.php`, com `X-Device-Token: ${TRACE_DEVICE_TOKEN}`: `{"equipment_id":N,"device_type":"CLP","status":"ONLINE","details":{"latency_ms":0}}`. Em falha, envie `OFFLINE` ou `ERRO` imediatamente. Se não houver sinal por mais de 3 segundos, a API bloqueia novos comandos operacionais. O fluxo deve tentar restabelecer a comunicação com o CLP a cada 2 segundos. Isso alimenta o monitoramento local; não habilita comandos físicos por si só.
 
 ## Sincronização remota
 
-O servidor mantém eventos em `sync_queue`. O processamento só envia dados quando `SYNC_REMOTE_URL` estiver configurada no `.env`; sem essa variável, os eventos permanecem `PENDENTE`, preservando o modo local-first.
+O servidor mantém eventos em `fila_sincronizacao`. O processamento envia dados
+quando `SYNC_REMOTE_URL` ou `SYNC_REMOTE_BATCH_URL` estiver configurada no `.env`;
+sem essas variáveis, os eventos permanecem `PENDENTE`, preservando o modo
+local-first. O endpoint de lote recebe `{"events":[...]}` e só deve responder
+`2xx` quando aceitar o lote inteiro; cada item inclui `company_id` e
+`event_uuid` para isolamento e idempotência.
 
 ## Captura imediata
 
-O Node-RED deverá chamar `/api/camera_worker.php` com `X-Internal-Token` igual a `CAMERA_INTERNAL_TOKEN`:
+O worker deverá chamar `/api/camera_worker.php` com `X-Device-Token` igual ao token do dispositivo de câmera provisionado:
 
-1. `POST {"action":"CLAIM"}` para reservar a próxima captura;
+1. `POST {"action":"CLAIM"}` para reservar a próxima captura da própria Dala;
 2. disparar a câmera conforme o protocolo confirmado;
 3. `POST {"action":"COMPLETE","request_id":N,"image_path":"..."}` para vincular a imagem ao carregamento.
 
@@ -62,9 +66,9 @@ O protocolo da câmera ainda precisa ser confirmado com o fabricante. O servidor
 
 O painel não escreve diretamente no CLP. Com a esteira pausada, qualquer perfil operacional pode solicitar `REVERSAO_ATIVAR` ou `REVERSAO_DESATIVAR`; a aplicação cria uma entrada local em `plc_command_requests`. O fluxo do Node-RED/gateway é:
 
-1. `POST ${TRACE_API_URL}/plc_gateway.php` com `X-Internal-Token: ${PLC_INTERNAL_TOKEN}` e `{"action":"CLAIM","equipment_id":N}`;
+1. `POST ${TRACE_API_URL}/plc_gateway.php` com `X-Device-Token: ${TRACE_DEVICE_TOKEN}` e `{"action":"CLAIM","equipment_id":N}`;
 2. validar no CLP que a máquina está pausada, sem emergência e com todos os intertravamentos do Ladder atendidos;
 3. enviar o pulso de ativação ou desativação de reversão definido no mapa de I/O aprovado;
-4. retornar `{"action":"COMPLETE","request_id":N,"status":"APLICADO"}` ou `REJEITADO`/`ERRO`, com uma mensagem curta.
+4. retornar `{"action":"COMPLETE","request_id":N,"status":"APLICADO"}` ou `REJEITADO`/`ERRO`, com uma mensagem curta. Somente o mesmo dispositivo que reservou o comando pode concluí-lo.
 
 Enquanto o mapa de I/O estiver como `CONFIRMAR`, o gateway pode consumir e responder `REJEITADO`, mas não deve escrever nenhuma bobina ou registrador.
