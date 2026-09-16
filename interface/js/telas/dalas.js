@@ -7,6 +7,18 @@ function dalaStatusCell(equipment) {
   return `<div class="dala-status" data-equipment-id="${equipment.id}"><span class="status-dot"></span>Verificando…</div>`;
 }
 
+const DALA_MOBILE_QUERY = "(max-width: 760px)";
+
+function isMobileDalaViewport() {
+  return typeof window !== "undefined" && typeof window.matchMedia === "function"
+    ? window.matchMedia(DALA_MOBILE_QUERY).matches
+    : false;
+}
+
+function desktopOnlyMessage() {
+  return `<section class="panel dala-desktop-only-notice" role="status"><h2>Dalas</h2><p>Esta tela está disponível apenas em computadores.</p><p>Abra o Trace em uma tela com largura maior para cadastrar e gerenciar Dalas.</p></section>`;
+}
+
 function dalaReferenceActions(equipment, canManage, canDelete) {
   const actions = [
     `<button data-action="view-dala" data-id="${equipment.id}" type="button">Visualizar</button>`,
@@ -14,15 +26,14 @@ function dalaReferenceActions(equipment, canManage, canDelete) {
     canManage ? `<button data-action="dala-actions" data-id="${equipment.id}" type="button">Ações</button>` : "",
     canDelete ? `<button class="danger" data-action="delete-dala" data-id="${equipment.id}" data-name="${esc(equipment.name)}" type="button">Excluir</button>` : "",
   ].filter(Boolean);
-  const withClass = (item, className) => item.includes('class="danger"')
-    ? item.replace('class="danger"', `class="${className} danger"`)
-    : item.replace("<button ", `<button class="${className}" `);
-  const directButtons = actions.map((item) => withClass(item, "dala-action-v2")).join("");
-  const menuButtons = actions.map((item) => withClass(item, "dala-action-menu-item-v2")).join("");
-  return `<div class="dala-actions-v2"><div class="dala-actions-desktop-v2">${directButtons}</div><div class="dala-menu-v2"><button class="dala-action-trigger-v2" data-action="toggle-dala-actions-menu" type="button" aria-haspopup="menu" aria-expanded="false">Ações&nbsp;⋯</button><div class="dala-menu-list-v2" role="menu" hidden>${menuButtons}</div></div></div>`;
+  const withClass = (item) => item.includes('class="danger"')
+    ? item.replace('class="danger"', 'class="dala-action-v2 danger"')
+    : item.replace("<button ", '<button class="dala-action-v2" ');
+  return `<div class="dala-actions-v2">${actions.map(withClass).join("")}</div>`;
 }
 
 export function dalas(store) {
+  if (isMobileDalaViewport()) return desktopOnlyMessage();
   const rows = store.state.equipments || [];
   const open = store.state.dalaFormOpen;
   const canDelete = ["ADMIN_DALLOGIX", "ADMIN_EMPRESA"].includes(
@@ -56,6 +67,7 @@ export function dalas(store) {
 
 // Tela Visualizar Dala: cartões com dados cadastrais e status de comunicação.
 export function dalaView(store) {
+  if (isMobileDalaViewport()) return desktopOnlyMessage();
   const dala = store.state.equipmentDetail;
   if (!dala) return `${pageHeader("Cadastros / Dalas", "Dala", "Carregando…")}`;
   const operation = (store.state.monitoring?.maquinas || []).find(
@@ -90,6 +102,7 @@ export function dalaView(store) {
 }
 
 export function dalaActions(store) {
+  if (isMobileDalaViewport()) return desktopOnlyMessage();
   const dala = store.state.equipmentDetail;
   if (!dala) return `${pageHeader("Cadastros / Dalas", "Ações", "Carregando…")}`;
   const config = store.state.dalaActionConfig || { acoes: [], gatilhos: [] };
@@ -113,6 +126,7 @@ export function dalaActions(store) {
 
 // Tela Editar Dala: mesmo formulário da criação, com dados preenchidos.
 export function dalaEdit(store) {
+  if (isMobileDalaViewport()) return desktopOnlyMessage();
   const dala = store.state.equipmentDetail;
   if (!dala)
     return `${pageHeader("Cadastros / Dalas", "Editar Dala", "Carregando…")}`;
