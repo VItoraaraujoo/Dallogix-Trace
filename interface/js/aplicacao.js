@@ -321,9 +321,23 @@ function installLocalIndicator() {
 
 function installOfflineShell() {
   if (!("serviceWorker" in navigator) || window.location.protocol === "file:") return;
-  navigator.serviceWorker.register("/service-worker.js?v=202609160001").catch(() => {
+  navigator.serviceWorker.register("/service-worker.js?v=202609160002").catch(() => {
     // A aplicação continua funcional quando o navegador não oferece suporte ao cache offline.
   });
+}
+
+function waitForDocumentStyles() {
+  const links = [...document.querySelectorAll('link[rel="stylesheet"]')];
+  return Promise.all(
+    links.map((link) => {
+      if (link.sheet) return Promise.resolve();
+      return new Promise((resolve) => {
+        const finish = () => resolve();
+        link.addEventListener("load", finish, { once: true });
+        link.addEventListener("error", finish, { once: true });
+      });
+    }),
+  );
 }
 
 function renderLogin(message = "") {
@@ -1945,6 +1959,7 @@ async function bootstrap() {
     window.location.replace(pagePath(currentPage));
     return;
   }
+  await waitForDocumentStyles();
   await renderPage();
   window.addEventListener("popstate", async () => {
     const page = pageFromPath();
