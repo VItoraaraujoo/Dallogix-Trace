@@ -1,62 +1,227 @@
 services:
   nginx:
     image: nginx:1.27-alpine
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    cap_add: [CHOWN, SETGID, SETUID]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 256
+    mem_limit: 128m
+    cpus: "0.50"
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
     depends_on:
       php:
-        condition: service_started
+        condition: service_healthy
       mysql:
         condition: service_healthy
     ports:
-      - "${PHP_PORT:-8080}:80"
+      - "${WEB_BIND_ADDRESS:-127.0.0.1}:${WEB_PORT:-8080}:80"
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./frontend:/var/www/frontend:ro
-      - ./backend:/var/www/backend:ro
+      - ./interface:/var/www/interface:ro
+      - ./servidor:/var/www/servidor:ro
 
   php:
     build:
       context: ./docker/php
+    restart: unless-stopped
+    user: "www-data"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 256
+    mem_limit: 512m
+    cpus: "1.50"
+    tmpfs:
+      - /tmp
+      - /var/lib/php/sessions
     environment:
       APP_ENV: ${APP_ENV:-local}
+      TZ: ${TZ:-America/Sao_Paulo}
+      SESSION_SECURE: ${SESSION_SECURE:-false}
+      SESSION_IDLE_TIMEOUT: ${SESSION_IDLE_TIMEOUT:-1800}
+      APP_URL: ${APP_URL:-http://localhost:8080}
       DB_HOST: mysql
       DB_NAME: ${MYSQL_DATABASE:-trace_local}
       DB_USER: ${MYSQL_USER:-trace}
       DB_PASSWORD: ${MYSQL_PASSWORD:-change-me-local}
       SYNC_REMOTE_URL: ${SYNC_REMOTE_URL:-}
-      CAMERA_INTERNAL_TOKEN: ${CAMERA_INTERNAL_TOKEN:-change-me-camera-token}
+      SYNC_REMOTE_BATCH_URL: ${SYNC_REMOTE_BATCH_URL:-}
+      SYNC_REMOTE_TOKEN: ${SYNC_REMOTE_TOKEN:-}
+      TRACE_VERSION: ${TRACE_VERSION:-development}
+      HEALTH_DEVICE_STALE_SECONDS: ${HEALTH_DEVICE_STALE_SECONDS:-30}
+      HEALTH_MIN_DISK_FREE_PERCENT: ${HEALTH_MIN_DISK_FREE_PERCENT:-5}
+      HEALTH_MAX_QUEUE_AGE_SECONDS: ${HEALTH_MAX_QUEUE_AGE_SECONDS:-604800}
+      READING_RETENTION_DAYS: ${READING_RETENTION_DAYS:-365}
+      SENSOR_EVENT_RETENTION_DAYS: ${SENSOR_EVENT_RETENTION_DAYS:-90}
+      AUDIT_RETENTION_DAYS: ${AUDIT_RETENTION_DAYS:-730}
+      SYNC_SENT_RETENTION_DAYS: ${SYNC_SENT_RETENTION_DAYS:-30}
+      ERROR_LOG_RETENTION_DAYS: ${ERROR_LOG_RETENTION_DAYS:-365}
+      TRACE_DEVICE_TOKEN: ${TRACE_DEVICE_TOKEN:-trace-device-local-token-2026-v1}
+      CAMERA_DEVICE_TOKEN: ${CAMERA_DEVICE_TOKEN:-trace-camera-local-token-2026-v1}
+      TRACE_TESTING_DISABLE_CSRF: ${TRACE_TESTING_DISABLE_CSRF:-0}
+      TRACE_TESTING_DISABLE_LOGIN_RATE_LIMIT: ${TRACE_TESTING_DISABLE_LOGIN_RATE_LIMIT:-0}
+      LOGIN_EMAIL_DOMAIN: ${LOGIN_EMAIL_DOMAIN:-dallogix.local}
     volumes:
-      - ./backend:/var/www/backend
-      - ./storage:/var/www/storage
+      - ./servidor:/var/www/servidor:ro
+      - ./armazenamento:/var/www/armazenamento
+      - ./scripts:/var/www/scripts:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "php -r 'new PDO(\"mysql:host=\".getenv(\"DB_HOST\").\";dbname=\".getenv(\"DB_NAME\"), getenv(\"DB_USER\"), getenv(\"DB_PASSWORD\"));'",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   mysql:
     image: mysql:8.4
+    restart: unless-stopped
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE:-trace_local}
       MYSQL_USER: ${MYSQL_USER:-trace}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-change-me-local}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-change-me-root}
     ports:
-      - "${MYSQL_PORT:-3306}:3306"
+      - "${BIND_ADDRESS:-127.0.0.1}:${MYSQL_PORT:-3306}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h localhost -u root -p$${MYSQL_ROOT_PASSWORD} --silent",
+        ]
       interval: 5s
       timeout: 5s
       retries: 20
 
   node-red:
+    profiles: ["industrial"]
     image: nodered/node-red:3.1.9
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 256
+    mem_limit: 512m
+    cpus: "1.00"
     ports:
-      - "${NODE_RED_PORT:-1880}:1880"
+      - "${BIND_ADDRESS:-127.0.0.1}:${NODE_RED_PORT:-1880}:1880"
+    environment:
+      TRACE_API_URL: ${TRACE_API_URL:-http://nginx}
+      TRACE_DEVICE_TOKEN: ${TRACE_DEVICE_TOKEN:-trace-device-local-token-2026-v1}
+      CAMERA_DEVICE_TOKEN: ${CAMERA_DEVICE_TOKEN:-trace-camera-local-token-2026-v1}
+      MODBUS_VIRTUAL_HOST: ${MODBUS_VIRTUAL_HOST:-modbus-virtual}
+      MODBUS_VIRTUAL_PORT: ${MODBUS_VIRTUAL_PORT:-1502}
     volumes:
       - node_red_data:/data
-      - ./integration/node-red:/seed:ro
+      - ./integracoes/node-red:/seed:ro
     healthcheck:
       test: ["CMD", "wget", "--spider", "--quiet", "http://127.0.0.1:1880"]
       interval: 10s
       timeout: 5s
       retries: 10
+
+  modbus-virtual:
+    profiles: ["simulation"]
+    build:
+      context: ./integracoes/modbus-virtual
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:${MODBUS_VIRTUAL_PORT:-1502}:1502"
+    environment:
+      MODBUS_PORT: 1502
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 128
+    mem_limit: 128m
+    cpus: "0.50"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1', 1502), 1); s.close()"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  image-retention:
+    build:
+      context: ./docker/php
+    depends_on:
+      mysql:
+        condition: service_healthy
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 128
+    mem_limit: 256m
+    cpus: "0.50"
+    tmpfs:
+      - /tmp
+    environment:
+      TZ: ${TZ:-America/Sao_Paulo}
+      DB_HOST: mysql
+      DB_NAME: ${MYSQL_DATABASE:-trace_local}
+      DB_USER: ${MYSQL_USER:-trace}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-change-me-local}
+      IMAGE_RETENTION_DAYS: ${IMAGE_RETENTION_DAYS:-30}
+      READING_RETENTION_DAYS: ${READING_RETENTION_DAYS:-365}
+      SENSOR_EVENT_RETENTION_DAYS: ${SENSOR_EVENT_RETENTION_DAYS:-90}
+      AUDIT_RETENTION_DAYS: ${AUDIT_RETENTION_DAYS:-730}
+      SYNC_SENT_RETENTION_DAYS: ${SYNC_SENT_RETENTION_DAYS:-30}
+      ERROR_LOG_RETENTION_DAYS: ${ERROR_LOG_RETENTION_DAYS:-365}
+    command:
+      [
+        "sh",
+        "-c",
+        "while true; do php /var/www/scripts/prune_images.php; php /var/www/scripts/prune_operational_data.php; sleep 86400; done",
+      ]
+    restart: unless-stopped
+    volumes:
+      - ./armazenamento:/var/www/armazenamento
+      - ./scripts:/var/www/scripts:ro
+
+  sync-worker:
+    build:
+      context: ./docker/php
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+    user: "www-data"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 128
+    mem_limit: 256m
+    cpus: "0.50"
+    tmpfs:
+      - /tmp
+      - /var/lib/php/sessions
+    environment:
+      TZ: ${TZ:-America/Sao_Paulo}
+      DB_HOST: mysql
+      DB_NAME: ${MYSQL_DATABASE:-trace_local}
+      DB_USER: ${MYSQL_USER:-trace}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-change-me-local}
+      SYNC_REMOTE_URL: ${SYNC_REMOTE_URL:-}
+      SYNC_REMOTE_BATCH_URL: ${SYNC_REMOTE_BATCH_URL:-}
+      SYNC_REMOTE_TOKEN: ${SYNC_REMOTE_TOKEN:-}
+      SYNC_BATCH_SIZE: ${SYNC_BATCH_SIZE:-50}
+    command:
+      [
+        "sh",
+        "-c",
+        "while true; do php /var/www/scripts/sync_worker.php; sleep 5; done",
+      ]
+    volumes:
+      - ./servidor:/var/www/servidor:ro
+      - ./scripts:/var/www/scripts:ro
 
 volumes:
   mysql_data:

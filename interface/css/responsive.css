@@ -1,0 +1,795 @@
+/*
+ * Camada responsiva do Dallogix Trace.
+ * Fica depois das folhas legadas para manter uma única fonte de verdade para
+ * o shell, o cabeçalho, os grids, formulários e o comportamento mobile.
+ */
+:root {
+  --trace-sidebar: clamp(232px, 21vw, 280px);
+  --trace-topbar: 76px;
+  --trace-content-max: 1440px;
+}
+
+html {
+  zoom: 1 !important;
+  min-width: 0;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+*,
+*::before,
+*::after {
+  min-width: 0;
+}
+
+body {
+  min-width: 0;
+  overflow-x: hidden;
+  font-size: 16px;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
+.shell {
+  display: block;
+  min-height: 100dvh;
+}
+
+.sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 200;
+  width: var(--trace-sidebar);
+  height: 100dvh;
+  max-height: 100dvh;
+  padding: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.sidebar .brand {
+  min-height: 112px;
+  margin: 0;
+  padding: 16px;
+  border-radius: 0;
+}
+
+.sidebar .brand img {
+  display: block;
+  width: min(100%, 184px);
+  height: auto;
+  margin: 0 auto;
+}
+
+.sidebar nav {
+  padding: 14px 12px;
+}
+
+.sidebar footer {
+  padding: 16px 14px 20px;
+}
+
+.main {
+  width: auto;
+  min-width: 0;
+  min-height: 100dvh;
+  margin-left: var(--trace-sidebar);
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 150;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  min-height: var(--trace-topbar);
+  padding: 12px clamp(16px, 2.6vw, 34px);
+  gap: 12px;
+}
+
+.topbar h1 {
+  position: static;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  transform: none;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+
+.topbar h1 small {
+  font-size: 0.72em;
+}
+
+.topbar .local {
+  justify-self: end;
+  white-space: nowrap;
+}
+
+.content {
+  width: 100%;
+  max-width: var(--trace-content-max);
+  margin: 0 auto;
+  padding: clamp(24px, 3vw, 40px) clamp(16px, 3vw, 42px) 56px;
+}
+
+#screen-root,
+#screen-root > * {
+  min-width: 0;
+}
+
+.title-row,
+.title-row.with-actions,
+.dala-page-header,
+.panel-heading {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.title-row h2,
+.dalas-header-v2 h2,
+.dalas-reference-header h2 {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.panel,
+.metric,
+.detail-card,
+.dala-album-card,
+.dala-selection-screen,
+.dala-selection-card {
+  min-width: 0;
+}
+
+.grid {
+  min-width: 0;
+}
+
+.grid.two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.grid.three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.grid.four {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.grid.five {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.filter-grid {
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+}
+
+label,
+input,
+select,
+textarea,
+button,
+.button {
+  max-width: 100%;
+}
+
+input,
+select,
+textarea {
+  min-width: 0;
+}
+
+.actions {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.actions > .button,
+.actions > a.button,
+.panel-heading > .button {
+  margin: 0;
+}
+
+.panel-heading > .actions {
+  margin-left: auto;
+}
+
+.table-wrap {
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+table {
+  max-width: none;
+}
+
+.table-wrap table {
+  margin: 0;
+}
+
+.mobile-card-table {
+  min-width: 0 !important;
+}
+
+.mobile-card-table td,
+.mobile-card-table th {
+  min-width: 0;
+}
+
+.dala-album-grid {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.dala-album-card {
+  aspect-ratio: auto;
+}
+
+.dala-album-card footer,
+.dashboard-card-links {
+  min-width: 0;
+}
+
+.dashboard-card-links .button {
+  min-width: 0;
+}
+
+.command-confirm {
+  max-height: min(720px, calc(100dvh - 32px));
+  overflow-y: auto;
+}
+
+.shell.sidebar-collapsed .sidebar {
+  width: 84px;
+  flex-basis: 84px;
+  padding: 0;
+}
+
+.shell.sidebar-collapsed .main {
+  margin-left: 84px;
+}
+
+.shell.sidebar-collapsed .sidebar .brand {
+  min-height: 72px;
+  padding: 12px;
+}
+
+.shell.sidebar-collapsed .sidebar .brand img {
+  width: 38px;
+  height: 38px;
+  object-fit: cover;
+  object-position: left center;
+}
+
+.shell.sidebar-collapsed .sidebar nav {
+  padding: 12px 8px;
+}
+
+.shell.sidebar-collapsed .sidebar .nav-label,
+.shell.sidebar-collapsed .sidebar .nav-text,
+.shell.sidebar-collapsed .sidebar .user-name,
+.shell.sidebar-collapsed .sidebar footer b,
+.shell.sidebar-collapsed .sidebar .logout-link {
+  display: none;
+}
+
+.shell.sidebar-collapsed .sidebar .nav-item {
+  width: 60px;
+  height: 56px;
+  min-height: 56px;
+  margin: 6px auto;
+  padding: 0;
+  justify-content: center;
+}
+
+.shell.sidebar-collapsed .sidebar .nav-icon,
+.shell.sidebar-collapsed .sidebar .nav-icon svg {
+  width: 28px;
+  height: 28px;
+  margin: 0;
+}
+
+.shell.sidebar-collapsed .sidebar footer {
+  padding: 14px 8px 18px;
+  text-align: center;
+}
+
+.shell.sidebar-collapsed .sidebar .user-avatar {
+  float: none;
+  margin: 0 auto;
+}
+
+@media (max-width: 1100px) and (min-width: 761px) {
+  :root {
+    --trace-sidebar: 232px;
+    --trace-topbar: 72px;
+  }
+
+  .content {
+    padding-inline: 24px;
+  }
+
+  .topbar {
+    padding-inline: 20px;
+  }
+
+  .topbar .local {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    overflow: hidden;
+    font-size: 0;
+  }
+
+  .topbar .local i {
+    margin: 0;
+  }
+
+  .topbar h1 small,
+  .topbar h1 .page-context {
+    display: none;
+  }
+
+  .grid.five {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .grid.four {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .grid.three {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dala-album-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  }
+
+  .reference-table-panel {
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 900px) {
+  .mobile-card-table {
+    display: block;
+  }
+
+  .mobile-card-table thead {
+    display: none;
+  }
+
+  .mobile-card-table tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  .mobile-card-table tbody tr {
+    display: grid;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: #fff;
+  }
+
+  .mobile-card-table tbody td {
+    display: grid;
+    grid-template-columns: minmax(100px, 38%) minmax(0, 1fr);
+    gap: 10px;
+    align-items: center;
+    padding: 12px 14px;
+    border-bottom: 1px solid #e7edf1;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+
+  .mobile-card-table tbody td:last-child {
+    border-bottom: 0;
+  }
+
+  .mobile-card-table tbody td[data-label]::before {
+    content: attr(data-label);
+    color: #69808f;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+
+  .mobile-card-table tbody td.empty-cell {
+    display: block;
+    text-align: center;
+  }
+
+  .mobile-card-table tbody td.empty-cell::before {
+    display: none;
+  }
+
+  .mobile-card-table .table-actions,
+  .mobile-card-table .actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 760px) {
+  :root {
+    --trace-sidebar: 0px;
+    --trace-topbar: 68px;
+  }
+
+  body.mobile-menu-open {
+    overflow: hidden;
+  }
+
+  .shell {
+    position: relative;
+  }
+
+  .sidebar,
+  .shell.sidebar-collapsed .sidebar {
+    position: fixed;
+    inset: var(--trace-topbar) auto 0 0;
+    z-index: 210;
+    width: min(300px, 88vw);
+    height: calc(100dvh - var(--trace-topbar));
+    max-height: calc(100dvh - var(--trace-topbar));
+    padding: 16px;
+    border-right: 1px solid #d6e0e7;
+    border-radius: 0 18px 18px 0;
+    background: #fff;
+    box-shadow: 16px 0 36px rgba(16, 43, 59, 0.18);
+    transform: translateX(-105%);
+    visibility: hidden;
+  }
+
+  .shell.mobile-menu-open::after {
+    position: fixed;
+    inset: var(--trace-topbar) 0 0;
+    z-index: 205;
+    content: "";
+    background: rgba(16, 43, 59, 0.32);
+  }
+
+  .shell.mobile-menu-open .sidebar {
+    transform: translateX(0);
+    visibility: visible;
+  }
+
+  .sidebar .brand,
+  .shell.sidebar-collapsed .sidebar .brand {
+    min-height: 76px;
+    margin: 0 0 16px;
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .sidebar .brand img,
+  .shell.sidebar-collapsed .sidebar .brand img {
+    width: min(100%, 154px);
+    height: auto;
+    object-fit: contain;
+  }
+
+  .sidebar nav,
+  .shell.sidebar-collapsed .sidebar nav {
+    display: block;
+    padding: 0;
+  }
+
+  .sidebar .nav-label,
+  .sidebar .nav-text,
+  .sidebar .user-name,
+  .sidebar footer b,
+  .sidebar .logout-link,
+  .shell.sidebar-collapsed .sidebar .nav-label,
+  .shell.sidebar-collapsed .sidebar .nav-text,
+  .shell.sidebar-collapsed .sidebar .user-name,
+  .shell.sidebar-collapsed .sidebar footer b,
+  .shell.sidebar-collapsed .sidebar .logout-link {
+    display: block;
+  }
+
+  .sidebar .nav-label {
+    color: #6a7f8d;
+    margin-top: 18px;
+  }
+
+  .sidebar .nav-item,
+  .shell.sidebar-collapsed .sidebar .nav-item {
+    width: auto;
+    height: auto;
+    min-height: 48px;
+    margin: 4px 0;
+    padding: 10px 12px;
+    justify-content: flex-start;
+    color: #334c5e;
+  }
+
+  .sidebar .nav-item:hover,
+  .sidebar .nav-item.active {
+    color: #0d6c91;
+    background: #e9f5f8;
+  }
+
+  .sidebar .nav-icon,
+  .sidebar .nav-icon svg,
+  .shell.sidebar-collapsed .sidebar .nav-icon,
+  .shell.sidebar-collapsed .sidebar .nav-icon svg {
+    width: 26px;
+    height: 26px;
+    margin: 0 12px 0 0;
+  }
+
+  .sidebar footer,
+  .shell.sidebar-collapsed .sidebar footer {
+    display: block;
+    padding: 16px 0;
+    text-align: left;
+  }
+
+  .shell.sidebar-collapsed .sidebar .user-avatar {
+    float: left;
+    margin: 0 8px 0 0;
+  }
+
+  .main,
+  .shell.sidebar-collapsed .main {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .topbar,
+  .shell .topbar {
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    height: var(--trace-topbar);
+    min-height: var(--trace-topbar);
+    padding: 8px 12px;
+    gap: 8px;
+  }
+
+  .topbar h1,
+  .shell .topbar h1 {
+    position: static;
+    max-width: none;
+    font-size: 15px;
+    text-align: left;
+    transform: none;
+  }
+
+  .topbar h1 small,
+  .topbar h1 .page-context {
+    display: none;
+  }
+
+  .topbar .local {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    overflow: hidden;
+    font-size: 0;
+  }
+
+  .topbar .local i {
+    margin: 0;
+  }
+
+  .sidebar-toggle,
+  .shell .sidebar-toggle {
+    position: relative;
+    z-index: 230;
+    width: 44px;
+    height: 44px;
+    font-size: 24px;
+  }
+
+  .content {
+    width: 100%;
+    padding: 22px 14px 36px;
+  }
+
+  .title-row,
+  .title-row.with-actions,
+  .dala-page-header {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .title-row h2,
+  .dalas-header-v2 h2,
+  .dalas-reference-header h2 {
+    font-size: 28px;
+  }
+
+  .title-row .actions,
+  .dala-page-header .actions,
+  .panel-heading > .actions {
+    width: 100%;
+    margin-left: 0;
+    align-self: stretch;
+  }
+
+  .title-row .actions .button,
+  .dala-page-header .actions .button,
+  .panel-heading > .actions .button {
+    flex: 1 1 150px;
+  }
+
+  .panel {
+    padding: 18px;
+    border-radius: 12px;
+  }
+
+  .grid,
+  .grid.two,
+  .grid.three,
+  .grid.four,
+  .grid.five {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-toolbar,
+  .filter-toggle {
+    width: 100%;
+  }
+
+  .filter-toolbar {
+    justify-content: stretch;
+  }
+
+  .actions .button,
+  .actions > a.button {
+    min-width: 0;
+  }
+
+  .work-routine-controls {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .work-routine-controls .button {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .work-emergency-zone .button {
+    width: 100%;
+  }
+
+  .dala-selection-screen {
+    padding: 20px 16px;
+  }
+
+  .dala-selection-grid,
+  .dala-album-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dala-album-card {
+    min-height: 0;
+  }
+
+  .dala-album-card footer {
+    align-items: stretch;
+  }
+
+  .dashboard-card-links {
+    grid-template-columns: 1fr;
+  }
+
+  .dala-info-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dala-overview-panel,
+  .dala-stats-panel,
+  .dala-diagnostics-panel {
+    padding: 20px 16px;
+  }
+
+  .dala-overview-heading,
+  .dala-stats-panel .panel-heading {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .dala-status-line {
+    max-width: none;
+    text-align: left;
+  }
+
+  .command-confirm-overlay {
+    padding: 14px;
+  }
+
+  .command-confirm {
+    padding: 22px 18px;
+  }
+
+  .command-confirm h2 {
+    font-size: 25px;
+  }
+
+  .command-confirm-actions {
+    gap: 10px;
+  }
+
+  .command-confirm-actions .button {
+    min-height: 58px;
+    padding: 13px 12px;
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .topbar h1,
+  .shell .topbar h1 {
+    font-size: 14px;
+  }
+
+  .content {
+    padding-inline: 12px;
+  }
+
+  .panel {
+    padding: 16px;
+  }
+
+  .dala-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .work-routine-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .mobile-card-table tbody td {
+    grid-template-columns: minmax(88px, 34%) minmax(0, 1fr);
+    padding-inline: 11px;
+  }
+
+  .command-confirm-actions {
+    flex-direction: column-reverse;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

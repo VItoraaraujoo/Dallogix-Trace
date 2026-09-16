@@ -1,0 +1,61 @@
+name: Deploy test server
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dallogix-trace-test-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure SSH
+        env:
+          DEPLOY_KEY: ${{ secrets.TEST_SERVER_SSH_KEY }}
+          SERVER_PORT: ${{ secrets.TEST_SERVER_SSH_PORT }}
+        run: |
+          install -d -m 700 "$HOME/.ssh"
+          # GitHub's textarea can preserve CRLF, escaped leading slashes, or receive only the Base64 body.
+          # Normalize all supported forms before handing the key to OpenSSH.
+          NORMALIZED_KEY=$(printf '%s\n' "$DEPLOY_KEY" | sed -E 's/^\\+//' | tr -d '\r' | tr -d '\\')
+          key_header="$(printf '%s' 'LS0tLS1CRUdJTiBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0=' | base64 -d)"
+          key_footer="$(printf '%s' 'LS0tLS1FTkQgT1BFTlNTSCBQUklWQVRFIEtFWS0tLS0t' | base64 -d)"
+          if printf '%s' "$NORMALIZED_KEY" | grep -q -- 'OPENSSH'; then
+            printf '%s\n' "$NORMALIZED_KEY" > "$HOME/.ssh/id_ed25519"
+          else
+            {
+              printf '%s\n' "$key_header"
+              printf '%s\n' "$NORMALIZED_KEY" | tr -d '\n '
+              printf '%s\n' "$key_footer"
+            } > "$HOME/.ssh/id_ed25519"
+          fi
+          chmod 600 "$HOME/.ssh/id_ed25519"
+          ssh-keygen -y -f "$HOME/.ssh/id_ed25519" > /dev/null
+          ssh-keyscan -H -p "${SERVER_PORT:-22}" 140.238.187.6 > "$HOME/.ssh/known_hosts"
+          chmod 644 "$HOME/.ssh/known_hosts"
+
+      - name: Deploy through the server synchronizer
+        env:
+          SERVER_USER: ${{ secrets.TEST_SERVER_USER }}
+          SERVER_PATH: ${{ secrets.TEST_SERVER_PATH }}
+          SERVER_PORT: ${{ secrets.TEST_SERVER_SSH_PORT }}
+        run: |
+          : "${SERVER_PORT:=22}"
+          : "${SERVER_PATH:=/opt/dallogix-trace}"
+          SERVER_HOST="140.238.187.6"
+          git archive --format=tar HEAD | \
+            ssh -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" \
+              "tar -xf - -C '$SERVER_PATH' && cd '$SERVER_PATH' && bash scripts/docker_compose.sh up -d --build --remove-orphans"
+          ssh -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" \
+            "curl --fail --silent --show-error --max-time 10 http://127.0.0.1:80/api/prontidao.php >/dev/null"

@@ -1,0 +1,60 @@
+name: Security checks
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+
+jobs:
+  quality-and-secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Validate project files
+        run: bash testes/qualidade.sh
+      - name: Scan for high-risk secrets
+        run: bash scripts/security_scan.sh
+
+  codeql:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: javascript
+      - name: Analyze JavaScript
+        uses: github/codeql-action/analyze@v4
+
+  sbom:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Generate source SBOM
+        uses: anchore/sbom-action@v0.24.0
+        with:
+          path: .
+          artifact-name: dallogix-trace-sbom.spdx.json
+          output-file: dallogix-trace-sbom.spdx.json
+          format: spdx-json
+
+  secrets-history:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Scan repository history for secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

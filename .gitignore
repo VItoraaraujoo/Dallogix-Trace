@@ -4,3 +4,11 @@ dist/
 .env
 .env.*
 !.env.example
+implantacao/windows/machine-config.json
+*.har
+armazenamento/backups/
+armazenamento/updates/
+tmp/
+.codegraph/
+
+armazenamento/producao-teste/

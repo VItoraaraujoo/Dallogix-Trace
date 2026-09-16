@@ -1,0 +1,88 @@
+name: Publicar versão de produção
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dallogix-trace-production-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    environment: production-release
+    steps:
+      - name: Checkout da versão
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Confirmar que a versão veio da master
+        run: |
+          git fetch origin master --no-tags
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" "origin/master"; then
+            echo "A versão precisa apontar para um commit já incorporado à master." >&2
+            exit 1
+          fi
+
+      - name: Validar código e segredos
+        run: |
+          bash testes/qualidade.sh
+          bash scripts/security_scan.sh
+
+      - name: Montar pacote imutável
+        run: |
+          mkdir -p dist
+          git archive --format=tar.gz --prefix=trace/ "$GITHUB_SHA" \
+            > "dist/trace-${GITHUB_REF_NAME}.tar.gz"
+          sha256sum "dist/trace-${GITHUB_REF_NAME}.tar.gz" \
+            | awk '{print $1}' > dist/sha256.txt
+
+      - name: Criar manifesto assinado
+        env:
+          UPDATE_SIGNING_PRIVATE_KEY: ${{ secrets.UPDATE_SIGNING_PRIVATE_KEY }}
+          REPOSITORY: ${{ github.repository }}
+          VERSION: ${{ github.ref_name }}
+        run: |
+          test -n "$UPDATE_SIGNING_PRIVATE_KEY" || {
+            echo "Configure UPDATE_SIGNING_PRIVATE_KEY no ambiente production-release." >&2
+            exit 1
+          }
+          key_file="$(mktemp)"
+          trap 'rm -f "$key_file"' EXIT
+          chmod 600 "$key_file"
+          printf '%s\n' "$UPDATE_SIGNING_PRIVATE_KEY" > "$key_file"
+          artifact_url="https://github.com/${REPOSITORY}/releases/download/${VERSION}/trace-${VERSION}.tar.gz"
+          sha256="$(cat dist/sha256.txt)"
+          printf '%s\n%s\n%s\n' "$VERSION" "$artifact_url" "$sha256" > dist/payload.txt
+          openssl dgst -sha256 -sign "$key_file" -out dist/signature.bin dist/payload.txt
+          signature="$(base64 --wrap=0 dist/signature.bin)"
+          python3 - "$VERSION" "$artifact_url" "$sha256" "$signature" > dist/manifest.json <<'PY'
+          import json
+          import sys
+
+          version, artifact_url, sha256, signature = sys.argv[1:]
+          print(json.dumps({
+              "channel": "stable",
+              "version": version,
+              "artifact_url": artifact_url,
+              "sha256": sha256,
+              "signature": signature,
+          }, ensure_ascii=False, indent=2))
+          PY
+
+      - name: Publicar release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            "dist/trace-${GITHUB_REF_NAME}.tar.gz" \
+            dist/manifest.json \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Dallogix Trace ${GITHUB_REF_NAME}" \
+            --generate-notes

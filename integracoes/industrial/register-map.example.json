@@ -1,0 +1,37 @@
+{
+  "plc": {
+    "model": "Delta DVP14SS",
+    "variant": "CONFIRMAR_SUFIXO",
+    "protocol": "modbus-tcp",
+    "plc_ip": "CONFIRMAR",
+    "plc_port": 502,
+    "external_port": "CONFIRMAR",
+    "serial_port": null,
+    "baud_rate": null,
+    "data_bits": null,
+    "parity": null,
+    "stop_bits": null,
+    "station_id": null
+  },
+  "signals": {
+    "sack_sensor": { "type": "coil", "address": "CONFIRMAR" },
+    "conveyor_run_command": { "type": "coil", "address": "CONFIRMAR" },
+    "conveyor_running": { "type": "coil", "address": "CONFIRMAR" },
+    "emergency_active": { "type": "coil", "address": "CONFIRMAR" },
+    "machine_unlock_command": { "type": "coil", "address": "CONFIRMAR" },
+    "planned_quantity_reached": { "type": "coil", "address": "CONFIRMAR" }
+  },
+  "simulation": {
+    "host": "127.0.0.1",
+    "port": 1502,
+    "unit_id": 1,
+    "warning": "Endereços abaixo são somente do servidor Modbus virtual local.",
+    "signals": {
+      "sack_sensor": { "type": "discrete_input", "address": 0 },
+      "emergency_active": { "type": "discrete_input", "address": 1 },
+      "conveyor_running": { "type": "coil", "address": 0 },
+      "reverse_command": { "type": "coil", "address": 1 },
+      "loaded_quantity": { "type": "holding_register", "address": 0 }
+    }
+  }
+}

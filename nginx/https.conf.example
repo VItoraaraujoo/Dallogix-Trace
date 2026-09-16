@@ -1,0 +1,63 @@
+# Substitua __APP_URL__ pela origem HTTPS antes de instalar.
+limit_req_zone $binary_remote_addr zone=api_limit:10m rate=10r/s;
+limit_req_zone $binary_remote_addr zone=login_limit:10m rate=2r/s;
+limit_conn_zone $binary_remote_addr zone=api_connections:10m;
+
+server {
+    listen 443 ssl;
+    ssl_certificate /etc/nginx/tls/fullchain.pem;
+    ssl_certificate_key /etc/nginx/tls/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    server_name _;
+    root /var/www/interface;
+    index index.html;
+    client_max_body_size 6m;
+    server_tokens off;
+    add_header Content-Security-Policy "default-src 'self'; connect-src 'self' https: wss:; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; frame-ancestors 'none'" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "no-referrer" always;
+    add_header Cross-Origin-Resource-Policy "same-origin" always;
+    add_header Cross-Origin-Opener-Policy "same-origin" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location = /site.webmanifest {
+        default_type application/manifest+json;
+        try_files $uri =404;
+    }
+
+    # HTML, JS e CSS sempre revalidados: evita módulos desatualizados no navegador
+    # após atualizações do sistema (o servidor responde 304 quando não mudou).
+    location ~* \.(?:html|js|css)$ {
+        expires epoch;
+        try_files $uri =404;
+    }
+
+    location = /api/login.php {
+        limit_req zone=login_limit burst=5 nodelay;
+        limit_conn api_connections 20;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME /var/www/servidor/api/login.php;
+        fastcgi_pass php:9000;
+    }
+
+    location ~ ^/api/(.+\.php)$ {
+        limit_req zone=api_limit burst=80 nodelay;
+        limit_req_status 429;
+        limit_conn api_connections 40;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME /var/www/servidor/api/$1;
+        fastcgi_pass php:9000;
+    }
+
+}
+
+server {
+    listen 80;
+    server_name _;
+    return 308 __APP_URL__$request_uri;
+}

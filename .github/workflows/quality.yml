@@ -1,0 +1,31 @@
+name: Trace quality
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate Trace
+        run: |
+          bash testes/qualidade.sh
+          bash testes/etapa29.sh
+          node testes/navegacao-isolada.mjs
+          php testes/api-permissoes-isoladas.php admin-target
+          php testes/api-permissoes-isoladas.php foreign-action
+          php testes/api-permissoes-isoladas.php created-id
+          php testes/api-permissoes-isoladas.php sync-reserved

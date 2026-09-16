@@ -1,7 +1,0 @@
-import { button } from './html.js';
-
-export function pageHeader(kicker, title, description, action = '') { return `<div class="title-row"><div><span class="kicker">${kicker}</span><h2>${title}</h2><p>${description}</p></div>${action}</div>`; }
-export function statuses() { return `<div class="status"><span>● Sensor <b>OK</b></span><span>● Scanner <b>OK</b></span><span>● CLP <b>Conectado</b></span><span>● Câmera <b>OK</b></span><span>● Servidor <b>Local</b></span></div>`; }
-export function progress(store) { const { loaded, planned } = store.state; const pct = Math.min(100, Math.round(loaded / planned * 100)); return `<div class="progress"><i style="width:${pct}%"></i></div><div class="progress-label"><span>${pct}% concluído</span><span>${loaded.toLocaleString('pt-BR')} / ${planned.toLocaleString('pt-BR')} sacas</span></div>`; }
-export function badge(status) { const tone = status === 'Finalizado' ? 'green' : status === 'Cancelado' ? 'red' : 'yellow'; return `<span class="badge ${tone}">${status}</span>`; }
-export function manifestsTable(rows) { return `<div class="panel table-wrap"><table><thead><tr><th>Data</th><th>Romaneio</th><th>Caminhão</th><th>Carga</th><th>Status</th><th>Ação</th></tr></thead><tbody>${rows.map(r => `<tr><td>${r[0]}</td><td><strong>#${r[1]}</strong></td><td>${r[2]}</td><td>${r[4]} sacas</td><td>${badge(r[3])}</td><td>${button('Abrir','work','secondary')}</td></tr>`).join('')}</tbody></table></div>`; }
