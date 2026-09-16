@@ -7,7 +7,7 @@ function dalaStatusCell(equipment) {
   return `<div class="dala-status" data-equipment-id="${equipment.id}"><span class="status-dot"></span>Verificando…</div>`;
 }
 
-const DALA_MOBILE_QUERY = "(max-width: 760px)";
+const DALA_MOBILE_QUERY = "(max-width: 900px)";
 
 function isMobileDalaViewport() {
   return typeof window !== "undefined" && typeof window.matchMedia === "function"
