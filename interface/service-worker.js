@@ -1,4 +1,4 @@
-const CACHE_NAME = "trace-shell-20260916-2";
+const CACHE_NAME = "trace-shell-20260916-3";
 const SHELL = [
   "/",
   "/index.html",
@@ -40,7 +40,7 @@ self.addEventListener("install", (event) => {
       await Promise.all(
         SHELL.map(async (path) => {
           try {
-            await cache.add(path);
+            await cache.add(new Request(path, { cache: "reload" }));
           } catch (_) {
             // A instalação não pode falhar se uma tela opcional não estiver disponível.
           }
@@ -72,7 +72,7 @@ self.addEventListener("fetch", (event) => {
 
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request)
+      fetch(new Request(request, { cache: "no-store" }))
         .then((response) => cacheResponse(request, response))
         .catch(async () => (await caches.match(request)) || caches.match("/index.html")),
     );
