@@ -24,7 +24,7 @@ import {
     manifests,
     manifestView,
     work,
-} from "./telas/operacoes.js?v=202609150500";
+} from "./telas/operacoes.js?v=202609160001";
 import { dashboard } from "./telas/painel.js?v=202609150300";
 import { users } from "./telas/usuarios.js";
 import { atualizarStatusDasDalas, linhaItemRomaneio } from "./controladores/operacao.js";
@@ -321,7 +321,7 @@ function installLocalIndicator() {
 
 function installOfflineShell() {
   if (!("serviceWorker" in navigator) || window.location.protocol === "file:") return;
-  navigator.serviceWorker.register("/service-worker.js?v=202609150400").catch(() => {
+  navigator.serviceWorker.register("/service-worker.js?v=202609160001").catch(() => {
     // A aplicação continua funcional quando o navegador não oferece suporte ao cache offline.
   });
 }
