@@ -793,3 +793,91 @@ table {
     animation-duration: 0.01ms !important;
   }
 }
+
+/* Ajustes finais do shell: menu consistente, tooltip legível e conteúdo sem faixa superior. */
+.content {
+  padding-top: 0 !important;
+}
+
+.sidebar .nav-item {
+  min-height: 56px;
+}
+
+.filter-toolbar {
+  justify-content: flex-start;
+  margin: 0 0 12px;
+}
+
+.filter-toggle {
+  min-width: 190px;
+}
+
+@media (min-width: 761px) {
+  .shell.sidebar-collapsed .sidebar {
+    width: 110px !important;
+    flex-basis: 110px !important;
+    padding: 14px 10px !important;
+    overflow: visible !important;
+  }
+
+  .shell.sidebar-collapsed .main {
+    margin-left: 110px !important;
+  }
+
+  .shell.sidebar-collapsed .sidebar .brand {
+    min-height: 104px !important;
+    height: auto !important;
+    margin: 0 0 22px !important;
+    padding: 10px 2px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .shell.sidebar-collapsed .sidebar .brand img {
+    width: 88px !important;
+    height: auto !important;
+    max-width: 100% !important;
+    object-fit: contain !important;
+    object-position: center !important;
+  }
+
+  .shell.sidebar-collapsed .sidebar .nav-item {
+    width: 86px !important;
+    height: 74px !important;
+    min-height: 74px !important;
+    margin: 8px auto !important;
+    border-radius: 17px;
+  }
+
+  .shell.sidebar-collapsed .sidebar .nav-icon,
+  .shell.sidebar-collapsed .sidebar .nav-icon svg {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  .shell.sidebar-collapsed .sidebar .nav-item:hover::before {
+    left: calc(100% + 14px) !important;
+    top: 50% !important;
+    z-index: 4000 !important;
+    transform: translateY(-50%) !important;
+    white-space: nowrap !important;
+    pointer-events: none !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .sidebar .nav-item {
+    min-height: 56px;
+    padding: 14px 12px;
+  }
+
+  .filter-toolbar {
+    justify-content: flex-start;
+  }
+
+  .filter-toggle {
+    width: auto;
+    min-width: 190px;
+  }
+}
